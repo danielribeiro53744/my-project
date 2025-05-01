@@ -3,7 +3,7 @@ const nextConfig = {
   experimental: {
     serverActions: true, // Add this line
   },
-  output: 'export',
+  // output: 'export',
   eslint: {
     ignoreDuringBuilds: true,
   },
