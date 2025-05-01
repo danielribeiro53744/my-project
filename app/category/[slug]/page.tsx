@@ -1,6 +1,6 @@
 
 
-import { getAllProducts, getProductsByGender } from "@/lib/products"
+import { getAllProducts, getProductsByGender } from "@/objects/products"
 import { ProductCard } from "@/components/shop/product-card"
 import { Metadata } from "next";
 

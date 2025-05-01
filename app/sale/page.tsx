@@ -1,4 +1,4 @@
-import { getAllProducts } from "@/lib/products"
+import { getAllProducts } from "@/objects/products"
 import { ProductCard } from "@/components/shop/product-card"
 
 export default function SalePage() {

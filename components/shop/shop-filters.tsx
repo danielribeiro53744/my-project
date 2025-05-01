@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { CheckIcon, PlusIcon } from "lucide-react"
-import { Product } from "@/lib/products"
+import { Product } from "@/objects/products"
 import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
