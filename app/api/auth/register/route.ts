@@ -1,11 +1,7 @@
 import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { z } from 'zod';
 import { db } from '@vercel/postgres';
-// import { sendRegistrationEmail } from '@/lib/mail';
-// import { sendWelcomeEmail } from '@/lib/mailer';
 
 const userSchema = z.object({
   name: z.string().min(2),
@@ -14,21 +10,6 @@ const userSchema = z.object({
   role: z.enum(['user', 'admin'])
 });
 
-// const DB_PATH = path.join(process.cwd(), 'data/users.json');
-
-// async function ensureDBExists() {
-//   try {
-//     await fs.access(path.dirname(DB_PATH));
-//   } catch {
-//     await fs.mkdir(path.dirname(DB_PATH));
-//   }
-  
-//   try {
-//     await fs.access(DB_PATH);
-//   } catch {
-//     await fs.writeFile(DB_PATH, JSON.stringify([]));
-//   }
-// }
 
 export async function POST(req: Request) {
   try {
@@ -62,13 +43,11 @@ export async function POST(req: Request) {
     
     // Save to BD
     try {
-      // await client.sql`
-      //   INSERT INTO users (data)
-      //   VALUES (${JSON.stringify(newUser)})
-      // `;
-      // return NextResponse.json({ success: true });
-      // await sendRegistrationEmail('danniribeiro01@gmail.com','Teste')
-      // await sendWelcomeEmail('danniribeiro01@gmail.com','Teste')
+      await client.sql`
+        INSERT INTO users (data)
+        VALUES (${JSON.stringify(newUser)})
+      `;
+      return NextResponse.json({ success: true });
     } catch (error) {
       console.error('Postgres error:', error);
       return NextResponse.json(
