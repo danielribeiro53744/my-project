@@ -93,3 +93,28 @@ export async function POST(req: Request) {
     );
   }
 }
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#User'
+ *     responses:
+ *       200:
+ *         description: User created successfully
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: User already exists
+ *       500:
+ *         description: Internal server error
+ */
+

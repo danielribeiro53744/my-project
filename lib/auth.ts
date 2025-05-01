@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { CartItem } from './definitions';
 
 interface User {
   id: string;
   name: string;
   email: string;
   role: 'user' | 'admin';
+  cart?: CartItem[];
 }
 
 interface AuthState {

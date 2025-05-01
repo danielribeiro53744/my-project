@@ -78,3 +78,105 @@ export async function POST(req: Request) {
     );
   }
 }
+/**
+ * @swagger
+ * tags:
+ *   - name: Users
+ *     description: Operations related to user authentication and management
+ * 
+ * /api/auth/login:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Login user
+ *     description: Authenticates a user with email and password and returns a JWT token if successful.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: The user's email address.
+ *               password:
+ *                 type: string
+ *                 description: The user's password.
+ *             required:
+ *               - email
+ *               - password
+ *     responses:
+ *       200:
+ *         description: User authenticated successfully and JWT token generated.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                       description: Unique identifier of the user.
+ *                     name:
+ *                       type: string
+ *                       description: The user's name.
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                       description: The user's email address.
+ *                     role:
+ *                       type: string
+ *                       enum: [user, admin]
+ *                       description: The user's role in the system.
+ *                 token:
+ *                   type: string
+ *                   description: The generated JWT token for the user.
+ *       400:
+ *         description: Invalid input data (e.g., incorrect email or password format).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       message:
+ *                         type: string
+ *                       path:
+ *                         type: string
+ *       401:
+ *         description: Invalid credentials (incorrect email or password).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       404:
+ *         description: User not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
