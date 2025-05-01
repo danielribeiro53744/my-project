@@ -59,7 +59,13 @@ export async function POST(req: Request) {
     
     // Save to file
     users.push(newUser);
-    await fs.writeFile(DB_PATH, JSON.stringify(users, null, 2));
+    try {
+      await fs.writeFile(DB_PATH, JSON.stringify(users, null, 2));
+    } catch (error) {
+      console.error('Failed to write file:', error);
+      return NextResponse.json({ success: false, error: 'Database update failed' });
+    }
+    // await fs.writeFile(DB_PATH, JSON.stringify(users, null, 2));
     // Return success without password
     const { password, ...userWithoutPassword } = newUser;
     return NextResponse.json(userWithoutPassword);
