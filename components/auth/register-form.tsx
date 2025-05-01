@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import emailjs from '@emailjs/browser';
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -57,16 +58,31 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
       role: "user",
     },
   })
+  const sendEmail = () => {
+    emailjs.send('service_bscwi4s', 'template_s34rwdj', 
+      {
+        subject: 'John Doe',
+        to: 'john@example.com',
+        text: 'Welcome to our app!'
+      }
+      , 'whWmKQtWdSto4tUqi')
+        .then((result) => {
+          console.log(result)
+        }, (error) => {
+            console.log(error.text);
+        });
+  };
+
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const result = await register(values.name, values.email, values.password, values.role)
-
       toast({
         title: "Account created",
         description: "You have successfully registered an account.",
       })
       
+        // sendEmail()
       // Redirect based on role
       if (values.role === "admin") {
         router.push("/admin")

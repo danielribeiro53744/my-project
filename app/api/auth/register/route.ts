@@ -4,6 +4,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
 import { db } from '@vercel/postgres';
+// import { sendRegistrationEmail } from '@/lib/mail';
+// import { sendWelcomeEmail } from '@/lib/mailer';
 
 const userSchema = z.object({
   name: z.string().min(2),
@@ -60,11 +62,13 @@ export async function POST(req: Request) {
     
     // Save to BD
     try {
-      await client.sql`
-        INSERT INTO users (data)
-        VALUES (${JSON.stringify(newUser)})
-      `;
+      // await client.sql`
+      //   INSERT INTO users (data)
+      //   VALUES (${JSON.stringify(newUser)})
+      // `;
       // return NextResponse.json({ success: true });
+      // await sendRegistrationEmail('danniribeiro01@gmail.com','Teste')
+      // await sendWelcomeEmail('danniribeiro01@gmail.com','Teste')
     } catch (error) {
       console.error('Postgres error:', error);
       return NextResponse.json(
