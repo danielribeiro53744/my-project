@@ -65,7 +65,7 @@ export const useAuth = create<AuthState>()(
           set({ isLoading: false });
           
           // Login after successful registration
-          await useAuth.getState().login(email, password);
+          // await useAuth.getState().login(email, password);
           
         } catch (error) {
           set({ isLoading: false });

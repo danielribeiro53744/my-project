@@ -4,6 +4,8 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { SignJWT } from 'jose';
 import { z } from 'zod';
+import { db } from '@vercel/postgres';
+import { Rows } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -18,17 +20,23 @@ const JWT_SECRET = new TextEncoder().encode(
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    const client = await db.connect();
     const validatedData = loginSchema.parse(body);
+
+    const { rows } = await client.sql`
+    SELECT * FROM users 
+    WHERE data->>'email' = ${validatedData.email}
+    LIMIT 1
+    `;
     
-    const users = JSON.parse(await fs.readFile(DB_PATH, 'utf-8'));
-    const user = users.find((u: any) => u.email === validatedData.email);
-    
-    if (!user) {
+    if (rows.length === 0) {
       return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
+    // console.log(rows)
+    const user = rows[0].data;  //Because LIMIT 1, and can only exist 1 user.email
     
     const isPasswordValid = await compare(validatedData.password, user.password);
     
@@ -65,7 +73,7 @@ export async function POST(req: Request) {
     }
     
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error' }, //error
       { status: 500 }
     );
   }

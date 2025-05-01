@@ -3,6 +3,7 @@ import { hash } from 'bcryptjs';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { z } from 'zod';
+import { db } from '@vercel/postgres';
 
 const userSchema = z.object({
   name: z.string().min(2),
@@ -11,39 +12,44 @@ const userSchema = z.object({
   role: z.enum(['user', 'admin'])
 });
 
-const DB_PATH = path.join(process.cwd(), 'data/users.json');
+// const DB_PATH = path.join(process.cwd(), 'data/users.json');
 
-async function ensureDBExists() {
-  try {
-    await fs.access(path.dirname(DB_PATH));
-  } catch {
-    await fs.mkdir(path.dirname(DB_PATH));
-  }
+// async function ensureDBExists() {
+//   try {
+//     await fs.access(path.dirname(DB_PATH));
+//   } catch {
+//     await fs.mkdir(path.dirname(DB_PATH));
+//   }
   
-  try {
-    await fs.access(DB_PATH);
-  } catch {
-    await fs.writeFile(DB_PATH, JSON.stringify([]));
-  }
-}
+//   try {
+//     await fs.access(DB_PATH);
+//   } catch {
+//     await fs.writeFile(DB_PATH, JSON.stringify([]));
+//   }
+// }
 
 export async function POST(req: Request) {
   try {
+    const client = await db.connect();
     const body = await req.json();
     const validatedData = userSchema.parse(body);
     
-    await ensureDBExists();
-    
-    const users = JSON.parse(await fs.readFile(DB_PATH, 'utf-8'));
-    
     // Check if user already exists
-    if (users.some((user: any) => user.email === validatedData.email)) {
+    const { rows } = await client.sql`
+      SELECT * FROM users 
+      WHERE data->>'email' = ${validatedData.email}
+      LIMIT 1
+    `;
+    
+    if (rows.length === 0) {
       return NextResponse.json(
-        { error: 'User already exists' },
-        { status: 400 }
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
-    
+    // console.log(rows)
+    const user = rows[0].data;  //Because LIMIT 1, and can only exist 1 user.email
+
     // Hash password
     const hashedPassword = await hash(validatedData.password, 12);
     
@@ -57,11 +63,22 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString()
     };
     
-    // Save to file
-    users.push(newUser);
-    console.log('User:',newUser)
-    await fs.writeFile(DB_PATH, JSON.stringify(users, null, 2));
-    console.log('UserStringify:',JSON.stringify(users, null, 2))
+    // Save to BD
+    try {
+      await client.sql`
+        INSERT INTO users (data)
+        VALUES (${JSON.stringify(newUser)})
+      `;
+      // return NextResponse.json({ success: true });
+    } catch (error) {
+      console.error('Postgres error:', error);
+      return NextResponse.json(
+        { error: 'Failed to save users' },
+        { status: 500 }
+      );
+    } finally {
+      client.release();
+    }
     // Return success without password
     const { password, ...userWithoutPassword } = newUser;
     console.log('UserWithoutPassword:', userWithoutPassword)
