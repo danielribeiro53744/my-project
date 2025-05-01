@@ -59,12 +59,9 @@ export async function POST(req: Request) {
     
     // Save to file
     users.push(newUser);
-    console.log('User:',newUser)
     await fs.writeFile(DB_PATH, JSON.stringify(users, null, 2));
-    console.log('UserStringify:',JSON.stringify(users, null, 2))
     // Return success without password
     const { password, ...userWithoutPassword } = newUser;
-    console.log('UserWithoutPassword:', userWithoutPassword)
     return NextResponse.json(userWithoutPassword);
     
   } catch (error) {

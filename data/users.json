@@ -6,5 +6,13 @@
     "password": "$2b$12$3CYh2IRsyHQlB7LxJmlY2uYcCQvvNvVqW2bEuEQze5h3u7bv8LBhC",
     "role": "user",
     "createdAt": "2025-05-01T09:40:13.076Z"
+  },
+  {
+    "id": "75890025-6a5e-4083-9553-3d5b4087487b",
+    "name": "teste",
+    "email": "danniribs3@gmail.com",
+    "password": "$2b$12$imjjZmtMYzNTWhWCc8uWie0uwBUCK3IiSHqEBhC3tpUVkSExLLq.G",
+    "role": "admin",
+    "createdAt": "2025-05-01T11:01:56.787Z"
   }
 ]
