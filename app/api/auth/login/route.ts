@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       );
     }
     // console.log(rows)
-    const user = rows[0].data;  //Because LIMIT 1, and can only exist 1 user.email
+    const user = rows.length === 0 ? null : rows[0].data;  //Because LIMIT 1, and can only exist 1 user.email
     
     const isPasswordValid = await compare(validatedData.password, user.password);
     

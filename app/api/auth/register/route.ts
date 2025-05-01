@@ -40,19 +40,14 @@ export async function POST(req: Request) {
       WHERE data->>'email' = ${validatedData.email}
       LIMIT 1
     `;
-    
-    if (rows.length === 0) {
+    if (rows.length > 0) {
       return NextResponse.json(
-        { error: 'User not found' },
+        { error: 'User already exists' },
         { status: 404 }
       );
     }
-    // console.log(rows)
-    const user = rows[0].data;  //Because LIMIT 1, and can only exist 1 user.email
-
     // Hash password
     const hashedPassword = await hash(validatedData.password, 12);
-    
     // Create new user
     const newUser = {
       id: crypto.randomUUID(),
