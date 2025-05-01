@@ -3,11 +3,12 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ShoppingCart } from "lucide-react"
-import { Product } from "@/lib/products"
+import { Product } from "@/objects/products"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
+import { useCart } from "@/lib/cart"
 
 interface ProductCardProps {
   product: Product
@@ -16,10 +17,14 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const { toast } = useToast()
+  const { addItem } = useCart()
   
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    
+    // Add first available size by default
+    addItem(product, product.sizes[0])
     
     toast({
       title: "Added to cart",

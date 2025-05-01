@@ -7,6 +7,8 @@ import { Moon, Sun, ShoppingCart, User, Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
+import { useCart } from "@/lib/cart"
+import { Badge } from "@/components/ui/badge"
 
 const Header = () => {
   const { theme, setTheme } = useTheme()
@@ -14,6 +16,9 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
+  const { items } = useCart()
+
+  const cartItemCount = items.reduce((total, item) => total + item.quantity, 0)
 
   // Handle hydration mismatch
   useEffect(() => {
@@ -90,9 +95,19 @@ const Header = () => {
             </Button>
           )}
 
-          <Button variant="ghost" size="icon" aria-label="Shopping Cart">
-            <ShoppingCart className="h-5 w-5" />
-          </Button>
+          <Link href="/cart">
+            <Button variant="ghost" size="icon" aria-label="Shopping Cart" className="relative">
+              <ShoppingCart className="h-5 w-5" />
+              {cartItemCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                >
+                  {cartItemCount}
+                </Badge>
+              )}
+            </Button>
+          </Link>
 
           <Link href="/login">
             <Button variant="ghost" size="icon" aria-label="Account">

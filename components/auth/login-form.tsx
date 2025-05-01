@@ -6,13 +6,13 @@ import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Github } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/lib/auth"
 import {
   Form,
   FormControl,
@@ -36,7 +36,7 @@ interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 export default function LoginForm({ className, ...props }: LoginFormProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = React.useState<boolean>(false)
+  const { login, isLoading } = useAuth()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,25 +47,27 @@ export default function LoginForm({ className, ...props }: LoginFormProps) {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      await login(values.email, values.password)
       
-      // For demo purposes, hardcoded check for admin
-      if (values.email === "admin@example.com" && values.password === "password123") {
-        toast({
-          title: "Admin login successful",
-        })
-        router.push("/admin")
+      toast({
+        title: "Login successful",
+      })
+      
+      // Redirect based on role
+      const user = useAuth.getState().user
+      if (user?.role === 'admin') {
+        router.push('/admin')
       } else {
-        toast({
-          title: "Login successful",
-        })
-        router.push("/shop")
+        router.push('/shop')
       }
-    }, 1000)
+    } catch (error) {
+      toast({
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "Please check your credentials",
+        variant: "destructive"
+      })
+    }
   }
 
   return (

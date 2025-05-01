@@ -15,7 +15,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { getAllProducts } from "@/lib/products"
+import { getAllProducts } from "@/objects/products"
 import AdminSidebar from "@/components/admin/sidebar"
 import ProductTable from "@/components/admin/product-table"
 

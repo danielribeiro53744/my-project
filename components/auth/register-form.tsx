@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/lib/auth"
 import {
   Form,
   FormControl,
@@ -19,11 +20,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-
-import { signup } from '@/app/actions/auth'
-import { redirect } from "next/navigation"
-import { SignupFormSchema } from "@/lib/definitions"
-import { useState, useTransition } from 'react';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -46,50 +42,10 @@ const formSchema = z.object({
 
 interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-function useCustomActionState(action: any, initialState: any) {
-  const [state, setState] = useState(initialState);
-  const [isPending, startTransition] = useTransition();
-
-  const formAction = async (formData: any) => {
-    startTransition(async () => {
-      try {
-        const result = await action(formData);
-        setState(result);
-      } catch (error: any) {
-        setState({
-          ...initialState,
-          message: error.message,
-          errors: { form: error.message }
-        });
-      }
-    });
-  };
-
-  return [state, formAction, isPending];
-}
-
 export default function RegisterForm({ className, ...props }: RegisterFormProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = React.useState<boolean>(false)
-  // localStorage.setItem('cart', JSON.stringify({products: [], total: 0}));
-
-  // const [state, action, pending] = useActionState(signup, undefined)
-  // const [state, formAction, isPending] = React.useActionState(signup, {
-  //   errors: {},
-  //   message: ''
-  // });
-  const [state, formAction, isPending] = useCustomActionState(signup, {
-    errors: {},
-    message: ''
-  });
-  console.log('Pending', isPending)
-  console.log('State:',state)
-  if(state?.message === 'Logged in' || state?.message === 'Already exists cookie'){
-    localStorage.setItem('cart', JSON.stringify({products: [], total: 0}));
-    localStorage.setItem('user', JSON.stringify({username: state.user.name, isAdmin: state.user.isAdmin}));
-    redirect('/dashboard')
-  }
+  const { register, isLoading } = useAuth()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -103,29 +59,33 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true)
+    try {
+      const result = await register(values.name, values.email, values.password, values.role)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
       toast({
         title: "Account created",
         description: "You have successfully registered an account.",
       })
       
-      // if (values.role === "admin") {
-      //   router.push("/admin")
-      // } else {
-      //   router.push("/shop")
-      // }
-    }, 1000)
+      // Redirect based on role
+      if (values.role === "admin") {
+        router.push("/admin")
+      } else {
+        router.push("/shop")
+      }
+    } catch (error) {
+      toast({
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive"
+      })
+    }
   }
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
       <Form {...form}>
-      {/* onSubmit={form.handleSubmit(onSubmit)} */}
-        <form  action={formAction} className="space-y-4"> 
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
             name="name"

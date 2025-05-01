@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Filter, SlidersHorizontal } from "lucide-react"
-import { getAllProducts } from "@/lib/products"
+import { getAllProducts } from "@/objects/products"
 import { ProductCard } from "@/components/shop/product-card"
 import { Button } from "@/components/ui/button"
 import ShopFilters from "@/components/shop/shop-filters"

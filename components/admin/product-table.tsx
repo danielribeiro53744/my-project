@@ -31,7 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Product } from "@/lib/products"
+import { Product } from "@/objects/products"
 
 interface ProductTableProps {
   products: Product[]

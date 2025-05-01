@@ -3,15 +3,21 @@
 import { SignupFormSchema, FormState } from '@/lib/definitions'
 import { redirect } from 'next/dist/server/api-utils';
 
-export async function signup(state: FormState, formData: FormData) {
- 
+export async function signup( formData: FormData) {
+  // var dede = formData.get('name')
+  // console.log(dede);
   // Validate form fields
+  const email1 = formData.get('email') as string;
+  const password1 = formData.get('password') as string;
+  console.log(email1, password1);
+
+
   const validatedFields = SignupFormSchema.safeParse({
-    name: formData.get('name'),
-    email: formData.get('email'),
-    password: formData.get('password'),
-    confirmPassword: formData.get('confirmPassword'),
-    role: formData.get('role'),
+    name: formData.get('name') as string,
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+    confirmPassword: formData.get('confirmPassword') as string,
+    role: formData.get('role') as string,
   })
  
   // If any form fields are invalid, return early

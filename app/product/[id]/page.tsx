@@ -1,5 +1,5 @@
-import { getAllProducts, getProductById } from "@/lib/products"
-import { ChevronLeft, Heart, MinusIcon, PlusIcon, Share2, ShoppingCart, Star } from "lucide-react"
+import { getAllProducts, getProductById } from "@/objects/products"
+import { ChevronLeft, Heart, Link, MinusIcon, PlusIcon, Share2, ShoppingCart, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -8,6 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import AddToCartButton from "@/components/shop/add-to-cart-button"
 
 export async function generateStaticParams() {
   const products = getAllProducts()
@@ -17,24 +18,24 @@ export async function generateStaticParams() {
 }
 
 interface ProductPageProps {
-  params: Promise<{
+  params: {
     id: string
-  }>
+  }
 }
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  const realParams = await params;
-  const { id } = realParams;
-  const product = getProductById(id)
+export default function ProductPage({ params }: ProductPageProps) {
+  const product = getProductById(params.id)
   
   if (!product) {
     return (
       <div className="container mx-auto px-4 pt-32 pb-16 text-center">
         <h1 className="text-2xl font-bold">Product not found</h1>
         <p className="mb-6">The product you're looking for doesn't exist or has been removed.</p>
+        <Link href="/shop">
         <Button asChild>
           <a>Go back to shop</a>
         </Button>
+        </Link>
       </div>
     )
   }
@@ -44,7 +45,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <Button
         variant="ghost"
         className="mb-6 pl-0"
-       
+        // ="/shop"
         asChild
       >
         <a>
@@ -178,30 +179,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </div>
           
-          {/* Quantity and Add to Cart */}
-          <div className="flex gap-4 mb-8">
-            <div className="flex items-center border rounded-md">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-none"
-              >
-                <MinusIcon className="h-4 w-4" />
-              </Button>
-              <span className="w-10 text-center">1</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-none"
-              >
-                <PlusIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <Button className="flex-1 gap-2">
-              <ShoppingCart className="h-4 w-4" />
-              Add to Cart
-            </Button>
+          {/* Add to Cart */}
+          <div className="mb-8">
+            <AddToCartButton product={product} />
           </div>
           
           {/* Product Details Accordion */}

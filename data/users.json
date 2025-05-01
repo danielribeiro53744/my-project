@@ -1,0 +1,10 @@
+[
+  {
+    "id": "92dfb9f7-e6a0-40f6-961c-fdce62f65f9b",
+    "name": "teste",
+    "email": "danniribs@gmail.com",
+    "password": "$2b$12$3CYh2IRsyHQlB7LxJmlY2uYcCQvvNvVqW2bEuEQze5h3u7bv8LBhC",
+    "role": "user",
+    "createdAt": "2025-05-01T09:40:13.076Z"
+  }
+]
