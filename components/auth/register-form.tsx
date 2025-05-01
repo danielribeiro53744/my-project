@@ -43,6 +43,12 @@ const formSchema = z.object({
 
 interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 export default function RegisterForm({ className, ...props }: RegisterFormProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -97,6 +103,73 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
       })
     }
   }
+  //////////////////////GOOGLE//////////////////////
+    const googleButtonRef = React.useRef<HTMLDivElement>(null);
+  
+    React.useEffect(() => {
+      const initializeGoogleButton = () => {
+        if (!window.google || !googleButtonRef.current) return;
+  
+        window.google.accounts.id.initialize({
+          client_id: "634344683916-1i9eoe73so2uqacv0bt9go2mj63evmil.apps.googleusercontent.com",
+          callback: handleGoogleResponse,
+        });
+  
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          theme: "outline",
+          size: "large",
+          width: 250,
+        });
+      };
+  
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGoogleButton;
+      document.body.appendChild(script);
+    }, []);
+    const decodeJwtPayload = (token: string) => {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) =>
+        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join(''));
+    
+      return JSON.parse(jsonPayload);
+    };
+  
+    const handleGoogleResponse = async (response: any) => {
+      const token = response.credential;
+      const payload = decodeJwtPayload(token);
+      const userData = {
+        name: payload.name || "",                // Full name from Google
+        email: payload.email || "",              // Email from Google
+        password: "GoogleOAuthUser123!",         // Placeholder password (you can auto-generate or skip password logic)
+        confirmPassword: "GoogleOAuthUser123!",  // Match password
+      };
+
+      console.log("Auto-filled user data:", userData);
+
+      try {
+        const result = await register(userData.name, userData.email, userData.password, 'user')
+        toast({
+          title: "Account created",
+          description: "You have successfully registered an account.",
+        })
+        
+          // sendEmail()
+        // Redirect based on role
+        router.push("/shop")
+
+      } catch (error) {
+        toast({
+          title: "Registration failed",
+          description: error instanceof Error ? error.message : "Please try again",
+          variant: "destructive"
+        })
+      }
+    };
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
@@ -208,6 +281,18 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
           </Button>
         </form>
       </Form>
+      {/* Google Login Button Section */}
+      <Button variant="outline" disabled={isLoading} className="relative flex items-center justify-center w-full h-10">
+          <div
+              ref={googleButtonRef}
+              className="absolute inset-0 opacity-0"
+            > 
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="mr-2 h-4 w-4">
+              <path d="M12.545 10.239v3.821h5.445c-.712 2.315-2.647 3.972-5.445 3.972-3.332 0-6.033-2.701-6.033-6.032s2.701-6.032 6.033-6.032c1.498 0 2.866.559 3.921 1.488l2.814-2.814c-1.801-1.677-4.206-2.702-6.735-2.702-5.522 0-10 4.478-10 10s4.478 10 10 10c8.396 0 10.249-7.85 9.426-11.748l-9.426.047z" />
+            </svg>
+            Google
+          </Button>
     </div>
   )
 }

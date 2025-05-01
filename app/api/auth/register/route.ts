@@ -47,7 +47,7 @@ export async function POST(req: Request) {
         INSERT INTO users (data)
         VALUES (${JSON.stringify(newUser)})
       `;
-      return NextResponse.json({ success: true });
+      // return NextResponse.json({ success: true });
     } catch (error) {
       console.error('Postgres error:', error);
       return NextResponse.json(
@@ -59,7 +59,6 @@ export async function POST(req: Request) {
     }
     // Return success without password
     const { password, ...userWithoutPassword } = newUser;
-    console.log('UserWithoutPassword:', userWithoutPassword)
     return NextResponse.json(userWithoutPassword);
     
   } catch (error) {
