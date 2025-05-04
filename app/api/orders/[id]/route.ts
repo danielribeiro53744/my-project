@@ -12,7 +12,7 @@ export async function GET(
 
     const { rows } = await client.sql`
       SELECT * FROM orders
-      WHERE data->>'id' = ${orderId}
+      WHERE id = ${orderId}
       LIMIT 1
     `;
 
@@ -41,7 +41,7 @@ export async function DELETE(
 
     const { rows } = await client.sql`
       DELETE FROM orders
-      WHERE data->>'id' = ${orderId}
+      WHERE id = ${orderId}
       RETURNING data
     `;
 
@@ -61,3 +61,89 @@ export async function DELETE(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+/**
+ * @swagger
+ *  tags:
+ *   - name: Orders
+ *     description: Operations related to orders management
+ * /api/orders/{id}:
+ *   get:
+ *     tags:
+ *       - Orders
+ *     summary: Get a specific order by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The order ID
+ *     responses:
+ *       200:
+ *         description: Order fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Order not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *
+ *   delete:
+ *     tags:
+ *       - Orders
+ *     summary: Delete an order by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The order ID
+ *     responses:
+ *       200:
+ *         description: Order deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 order:
+ *                   $ref: '#/components/schemas/Order'
+ *       404:
+ *         description: Order not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ */
