@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { useCart } from "@/lib/cart"
+import Image from "next/image"
 
 interface ProductCardProps {
   product: Product
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isHovered, setIsHovered] = useState(false)
   const { toast } = useToast()
   const { addItem } = useCart()
   
@@ -23,7 +24,6 @@ export function ProductCard({ product }: ProductCardProps) {
     e.preventDefault()
     e.stopPropagation()
     
-    // Add first available size by default
     addItem(product, product.sizes[0])
     
     toast({
@@ -31,26 +31,39 @@ export function ProductCard({ product }: ProductCardProps) {
       description: `${product.name} has been added to your cart.`,
     })
   }
-  
-  const handleImageHover = () => {
-    if (product.images.length > 1) {
-      setCurrentImageIndex(currentImageIndex === 0 ? 1 : 0)
-    }
-  }
 
   return (
     <Link href={`/product/${product.id}`} className="group">
       <div className="relative rounded-lg overflow-hidden mb-4">
-        {/* Product image */}
+        {/* Product image container */}
         <div 
-          className="aspect-[3/4] w-full bg-secondary/20"
-          onMouseEnter={handleImageHover}
-          onMouseLeave={handleImageHover}
+          className="aspect-[3/4] w-full bg-secondary/20 relative overflow-hidden"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
-          <div 
-            className="h-full w-full transition-transform duration-700 ease-in-out bg-cover bg-center"
-            style={{ backgroundImage: `url(${product.images[currentImageIndex]})` }}
+          {/* Primary image */}
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            fill
+            className={cn(
+              "object-cover transition-opacity duration-500",
+              isHovered && product.images[1] ? "opacity-0" : "opacity-100"
+            )}
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
           />
+          
+          {/* Secondary image (shown on hover) */}
+          {product.images[1] && (
+            <Image
+              src={product.images[1]}
+              alt={product.name}
+              fill
+              className="object-cover transition-opacity duration-500"
+              style={{ opacity: isHovered ? 1 : 0 }}
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+            />
+          )}
         </div>
         
         {/* Badges */}
@@ -86,11 +99,11 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="flex items-center gap-2">
           {product.discountPrice ? (
             <>
-              <span className="font-semibold">${product.discountPrice.toFixed(2)}</span>
-              <span className="text-muted-foreground text-sm line-through">${product.price.toFixed(2)}</span>
+              <span className="font-semibold">{product.discountPrice.toFixed(2)}€</span>
+              <span className="text-muted-foreground text-sm line-through">{product.price.toFixed(2)}€</span>
             </>
           ) : (
-            <span className="font-semibold">${product.price.toFixed(2)}</span>
+            <span className="font-semibold">{product.price.toFixed(2)}€</span>
           )}
         </div>
       </div>

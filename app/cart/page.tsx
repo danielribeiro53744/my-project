@@ -139,7 +139,7 @@ export default function CartPage() {
                   </TableCell>
                   <TableCell>{item.size}</TableCell>
                   <TableCell>
-                    ${(item.product.discountPrice || item.product.price).toFixed(2)}
+                    {(item.product.discountPrice || item.product.price).toFixed(2)}€
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -177,7 +177,7 @@ export default function CartPage() {
                     </div>
                   </TableCell>
                   <TableCell className="font-medium">
-                    ${((item.product.discountPrice || item.product.price) * item.quantity).toFixed(2)}
+                    {((item.product.discountPrice || item.product.price) * item.quantity).toFixed(2)}€
                   </TableCell>
                   <TableCell>
                     <Button
@@ -201,7 +201,7 @@ export default function CartPage() {
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>${getTotal().toFixed(2)}</span>
+                <span>{getTotal().toFixed(2)}€</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping</span>
@@ -210,7 +210,7 @@ export default function CartPage() {
               <div className="border-t pt-3">
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span>${getTotal().toFixed(2)}</span>
+                  <span>{getTotal().toFixed(2)}€</span>
                 </div>
               </div>
             </div>

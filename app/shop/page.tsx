@@ -21,7 +21,7 @@ export default function ShopPage() {
             Browse our collection of premium clothing and accessories
           </p>
         </div>
-        <div className="mt-4 md:mt-0">
+        {/* <div className="mt-4 md:mt-0">
           <Button 
             variant="outline" 
             onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -30,7 +30,7 @@ export default function ShopPage() {
             <SlidersHorizontal className="h-4 w-4" />
             <span>Filter</span>
           </Button>
-        </div>
+        </div> */}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
