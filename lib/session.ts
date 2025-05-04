@@ -2,14 +2,14 @@
 import { serialize, parse }  from 'cookie'
 import { NextRequest, NextResponse } from 'next/server'
 import { redirect } from 'next/navigation'
-import { User } from '@/objects/user'
+import { User } from '@/lib/user'
 import { Cookie } from '@/objects/cookie'
 
 import { cookies } from 'next/headers';
 
 export async function createSession(user: User,req: NextRequest, maxAge = 604800 ) { //validate if is admin
   // Validate user object exists and has required properties
-  if (!user || typeof user.name !== 'string' || typeof user.isAdmin !== 'boolean') {
+  if (!user || typeof user.name !== 'string' || typeof user.role !== 'boolean') {
     throw new Error('Invalid user object');
 }
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -36,7 +36,7 @@ export async function createSession(user: User,req: NextRequest, maxAge = 604800
     if (cookie){ //if exists
       if(cookie.name !== user?.name) { // if its different
         try {
-            let newCookie = await Cookie(user.name,user.isAdmin)
+            let newCookie = await Cookie(user.name,user.role)
             return updateCookies('session_token', JSON.stringify(newCookie), expiresAt, 'Logged in');
         } catch (error) {
             console.error('Failed to update session cookie:', error);
@@ -63,7 +63,7 @@ export async function createSession(user: User,req: NextRequest, maxAge = 604800
     }
     // if doesn't exists cookie
     try {
-      let newCookie = await Cookie(user.name,user.isAdmin)
+      let newCookie = await Cookie(user.name,user.role)
       return updateCookies('session_token', JSON.stringify(newCookie), expiresAt, 'Logged in');
     } catch (error) {
         console.error('Failed to update session cookie:', error);

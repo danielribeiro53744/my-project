@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { z } from 'zod';
+import { db } from '@vercel/postgres';
 
 const userSchema = z.object({
   name: z.string().min(2),
@@ -11,42 +10,27 @@ const userSchema = z.object({
   role: z.enum(['user', 'admin'])
 });
 
-const DB_PATH = path.join(process.cwd(), 'data/users.json');
-
-async function ensureDBExists() {
-  try {
-    await fs.access(path.dirname(DB_PATH));
-  } catch {
-    await fs.mkdir(path.dirname(DB_PATH));
-  }
-  
-  try {
-    await fs.access(DB_PATH);
-  } catch {
-    await fs.writeFile(DB_PATH, JSON.stringify([]));
-  }
-}
 
 export async function POST(req: Request) {
   try {
+    const client = await db.connect();
     const body = await req.json();
     const validatedData = userSchema.parse(body);
     
-    await ensureDBExists();
-    
-    const users = JSON.parse(await fs.readFile(DB_PATH, 'utf-8'));
-    
     // Check if user already exists
-    if (users.some((user: any) => user.email === validatedData.email)) {
+    const { rows } = await client.sql`
+      SELECT * FROM users 
+      WHERE data->>'email' = ${validatedData.email}
+      LIMIT 1
+    `;
+    if (rows.length > 0) {
       return NextResponse.json(
         { error: 'User already exists' },
-        { status: 400 }
+        { status: 404 }
       );
     }
-    
     // Hash password
     const hashedPassword = await hash(validatedData.password, 12);
-    
     // Create new user
     const newUser = {
       id: crypto.randomUUID(),
@@ -57,15 +41,22 @@ export async function POST(req: Request) {
       createdAt: new Date().toISOString()
     };
     
-    // Save to file
-    users.push(newUser);
+    // Save to BD
     try {
-      await fs.writeFile(DB_PATH, JSON.stringify(users, null, 2));
+      await client.sql`
+        INSERT INTO users (data)
+        VALUES (${JSON.stringify(newUser)})
+      `;
+      // return NextResponse.json({ success: true });
     } catch (error) {
-      console.error('Failed to write file:', error);
-      return NextResponse.json({ success: false, error: 'Database update failed' });
+      console.error('Postgres error:', error);
+      return NextResponse.json(
+        { error: 'Failed to save users' },
+        { status: 500 }
+      );
+    } finally {
+      client.release();
     }
-    // await fs.writeFile(DB_PATH, JSON.stringify(users, null, 2));
     // Return success without password
     const { password, ...userWithoutPassword } = newUser;
     return NextResponse.json(userWithoutPassword);
@@ -84,3 +75,28 @@ export async function POST(req: Request) {
     );
   }
 }
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#User'
+ *     responses:
+ *       200:
+ *         description: User created successfully
+ *       400:
+ *         description: Validation error
+ *       409:
+ *         description: User already exists
+ *       500:
+ *         description: Internal server error
+ */
+

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import emailjs from '@emailjs/browser';
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import GoogleButton from "./googleButton"
+import { sendEmail } from "@/lib/mail"
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -61,12 +64,12 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       const result = await register(values.name, values.email, values.password, values.role)
-
       toast({
         title: "Account created",
         description: "You have successfully registered an account.",
       })
       
+        // sendEmail()
       // Redirect based on role
       if (values.role === "admin") {
         router.push("/admin")
@@ -192,6 +195,17 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
           </Button>
         </form>
       </Form>
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Or continue with
+          </span>
+        </div>
+      </div>
+      <GoogleButton action="register"/>
     </div>
   )
 }

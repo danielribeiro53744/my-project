@@ -1,4 +1,7 @@
-"use client"
+// app/cart/page.tsx
+"use client"; // Required since we're using event handlers
+
+import { useRouter } from 'next/navigation';
 
 import { Minus, Plus, Trash2 } from "lucide-react"
 import { useCart } from "@/lib/cart"
@@ -12,11 +15,19 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
+// import { loadStripe } from '@stripe/stripe-js';
 import Link from "next/link"
+// import { useRouter } from "next/router"
+// import router from "next/router";
+// import { redirect } from "next/navigation"
+
+// const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCart()
   const { toast } = useToast()
+  const router = useRouter()
+  
 
   const handleQuantityChange = (
     productId: string,
@@ -29,12 +40,49 @@ export default function CartPage() {
     updateQuantity(productId, size, newQuantity)
   }
 
-  const handleCheckout = () => {
-    toast({
-      title: "Checkout initiated",
-      description: "This is a demo - no actual payment will be processed.",
-    })
-    clearCart()
+  const handleCheckout = async () => {
+    try {
+      
+      const shippingAddress = {
+        name: "Jane Doe",
+        address: "456 Fashion Ave",
+        city: "Los Angeles",
+        country: "USA",
+        postalCode: "90001"
+      };
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items, userId: 'teste', shippingAddress }),
+      });
+
+      const { sessionId, newOrder } = await response.json();
+      // const stripe = await stripePromise;
+      
+      // if (!stripe) {
+      //   throw new Error('Stripe failed to initialize');
+      // }
+
+      // const { error } = await stripe.redirectToCheckout({ sessionId });
+
+      // if (error) {
+      //   throw error;
+      // }
+      if(sessionId === "session"){
+        router.push(`/checkout/success?session_id=session&order_id=${newOrder}`)
+        // window.document.location.href='/checkout/success?session_id=session'
+        // redirect('/checkout/success?session_id=session')
+      }
+    } catch (error) {
+      toast({
+        title: "Checkout failed",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive"
+      });
+      console.log(error)
+    }
   }
 
   if (items.length === 0) {

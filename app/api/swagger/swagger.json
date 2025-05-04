@@ -1,0 +1,133 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+      "title": "User Registration API",
+      "version": "1.0.0",
+      "description": "API to register users with nested cart and product information."
+    },
+    "paths": {
+      "/api/register": {
+        "post": {
+          "summary": "Register a new user",
+          "tags": ["Users"],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "User registered successfully",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/UserResponse"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Validation error"
+            },
+            "409": {
+              "description": "User already exists"
+            },
+            "500": {
+              "description": "Internal server error"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Color": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "example": "Red" },
+            "hex": { "type": "string", "pattern": "^#([0-9A-Fa-f]{3}){1,2}$", "example": "#ff0000" }
+          },
+          "required": ["name", "hex"]
+        },
+        "Product": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "price": { "type": "number", "minimum": 0 },
+            "discountPrice": { "type": "number", "minimum": 0 },
+            "category": { "type": "string" },
+            "gender": { "type": "string", "enum": ["men", "women", "unisex"] },
+            "sizes": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "colors": {
+              "type": "array",
+              "items": { "$ref": "#/components/schemas/Color" }
+            },
+            "images": {
+              "type": "array",
+              "items": { "type": "string", "format": "uri" }
+            },
+            "featured": { "type": "boolean" },
+            "isBestSeller": { "type": "boolean" },
+            "isNewArrival": { "type": "boolean" }
+          },
+          "required": [
+            "id", "name", "description", "price", "category", "gender",
+            "sizes", "colors", "images", "featured", "isBestSeller", "isNewArrival"
+          ]
+        },
+        "CartItem": {
+          "type": "object",
+          "properties": {
+            "product": { "$ref": "#/components/schemas/Product" },
+            "quantity": { "type": "integer", "minimum": 1 },
+            "size": { "type": "string" }
+          },
+          "required": ["product", "quantity", "size"]
+        },
+        "User": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "minLength": 3 },
+            "email": { "type": "string", "format": "email" },
+            "password": { "type": "string", "minLength": 8 },
+            "role": {
+              "type": "string",
+              "enum": ["user", "admin"],
+              "default": "user"
+            },
+            "cart": {
+              "type": "array",
+              "items": { "$ref": "#/components/schemas/CartItem" }
+            }
+          },
+          "required": ["name", "email", "password"]
+        },
+        "UserResponse": {
+          "type": "object",
+          "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "name": { "type": "string" },
+            "email": { "type": "string", "format": "email" },
+            "role": { "type": "string", "enum": ["user", "admin"] },
+            "cart": {
+              "type": "array",
+              "items": { "$ref": "#/components/schemas/CartItem" }
+            },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+          }
+        }
+      }
+    }
+  }
+  
