@@ -114,7 +114,7 @@ export const useOrderStore = create<OrderState>()(
       updateOrderStatus: async (orderId, status) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`http://localhost:3000/api/orders/${orderId}/status`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/orders/${orderId}/status`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
