@@ -46,7 +46,7 @@ const Header = () => {
   // console.log(isAuthenticated)
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0)
 
-  const { isAuthenticated, user } = isAuth();
+
 
 
   useEffect(() => {
