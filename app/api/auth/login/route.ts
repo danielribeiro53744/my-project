@@ -59,10 +59,20 @@ export async function POST(req: Request) {
     
     const { password, ...userWithoutPassword } = user;
     
-    return NextResponse.json({
+    // In your login endpoint (after successful auth)
+    const response = NextResponse.json({
       user: userWithoutPassword,
-      token
+      token // Still return token for clients that need it
     });
+
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 60 * 60 * 24 // 1 day
+    });
+
+    return response;
     
   } catch (error) {
     if (error instanceof z.ZodError) {

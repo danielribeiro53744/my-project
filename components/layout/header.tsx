@@ -1,14 +1,26 @@
 "use client"
 
+import router from "next/router"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { Moon, Sun, ShoppingCart, User, Menu, X } from "lucide-react"
+import { Moon, Sun, ShoppingCart, User, Menu, X, LogOut, User as UserIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { useCart } from "@/lib/cart"
+import { useAuth } from "@/lib/auth"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+// import { useSession, signOut } from "next-auth/react"
+import Image from "next/image"
+import { checkAuth } from '@/lib/useSession';
+
 
 const Header = () => {
   const { theme, setTheme } = useTheme()
@@ -17,28 +29,51 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
   const { items } = useCart()
-
+  const { isAuth } = useAuth()
+  const [authState, setAuthState] = useState<{
+    isAuthenticated: boolean;
+    user: null | { name: string; email: string, image?: string };
+    isLoading: boolean;
+  }>({
+    isAuthenticated: false,
+    user: null,
+    isLoading: true,
+  });
+  // const { data: session, status } = session()
+  // const { isAuthenticated, user } =  checkAuth();
+  // const { isAuthenticated, user, isLoading } = useSession();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  // console.log(isAuthenticated)
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0)
 
-  // Handle hydration mismatch
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
+  const { isAuthenticated, user } = isAuth();
 
-  // Handle scroll events
+
+  useEffect(() => {
+    setIsMounted(true)    
+  }, [])
+  // console.log(authState.isAuthenticated)
+  useEffect(() => {
+    const verifyAuth = async () => {
+      const { isAuthenticated, user } = await checkAuth();
+      console.log('is:::',isAuthenticated)
+      setAuthState({
+        isAuthenticated,
+        user,
+        isLoading: false,
+      });
+    };
+
+    verifyAuth();
+
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setIsScrolled(true)
-      } else {
-        setIsScrolled(false)
-      }
+      setIsScrolled(window.scrollY > 10)
     }
-
     window.addEventListener("scroll", handleScroll)
-    return () => {
-      window.removeEventListener("scroll", handleScroll)
-    }
+    return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
   const navItems = [
@@ -50,6 +85,26 @@ const Header = () => {
   ]
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
+  // const handleLogout = async () => {
+  //   // await signOut({ callbackUrl: "/" })
+  //   setIsDropdownOpen(false)
+  // }
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/signout', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        // Refresh the page to clear client-side state
+        router.reload();
+        // Optionally redirect to home/login page
+        // router.push('/login');
+      }
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    }
+  };
 
   return (
     <header className={cn(
@@ -109,11 +164,47 @@ const Header = () => {
             </Button>
           </Link>
 
-          <Link href="/login">
-            <Button variant="ghost" size="icon" aria-label="Account">
-              <User className="h-5 w-5" />
-            </Button>
-          </Link>
+          {/* User Account Dropdown */}
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Account">
+                {authState.isAuthenticated && authState.user?.image ? (
+                  <Image
+                    src={authState.user.image}
+                    alt="User Profile"
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <UserIcon className="h-5 w-5" />
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              {authState.isAuthenticated ? (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="w-full" onClick={() => setIsDropdownOpen(false)}>
+                      <UserIcon className="mr-2 h-4 w-4" />
+                      Profile
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <DropdownMenuItem asChild>
+                  <Link href="/login" className="w-full" onClick={() => setIsDropdownOpen(false)}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Link>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Mobile Menu Button */}
           <Button
@@ -151,9 +242,29 @@ const Header = () => {
                 </Link>
               ))}
               <div className="pt-2 border-t">
-                <Link href="/login" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="default" className="w-full">Sign In</Button>
-                </Link>
+                {authState.isAuthenticated ? (
+                  <>
+                    <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full mb-2">
+                        My Profile
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="destructive" 
+                      className="w-full"
+                      onClick={() => {
+                        handleLogout()
+                        setIsMenuOpen(false)
+                      }}
+                    >
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="default" className="w-full">Sign In</Button>
+                  </Link>
+                )}
               </div>
             </nav>
           </div>

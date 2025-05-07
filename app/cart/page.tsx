@@ -17,9 +17,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 // import { loadStripe } from '@stripe/stripe-js';
 import Link from "next/link"
-// import { useRouter } from "next/router"
-// import router from "next/router";
-// import { redirect } from "next/navigation"
+
 
 // const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
@@ -70,6 +68,8 @@ export default function CartPage() {
       // if (error) {
       //   throw error;
       // }
+
+
       if(sessionId === "session"){
         router.push(`/checkout/success?session_id=session&order_id=${newOrder}`)
         // window.document.location.href='/checkout/success?session_id=session'
