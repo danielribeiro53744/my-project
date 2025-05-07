@@ -35,13 +35,14 @@ const formSchema = z.object({
     message: "Password must be at least 8 characters long",
   }),
   confirmPassword: z.string(),
-  role: z.enum(["user", "admin"], {
-    required_error: "Please select a role",
+  image: z.any().refine(file => file?.length === 1, {
+    message: "Please upload an image",
   }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
+
 
 interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -57,13 +58,13 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
       email: "",
       password: "",
       confirmPassword: "",
-      role: "user",
-    },
+      image: undefined,
+    },    
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const result = await register(values.name, values.email, values.password, values.role)
+      const result = await register(values.name, values.email, values.password, 'user')
       toast({
         title: "Account created",
         description: "You have successfully registered an account.",
@@ -77,11 +78,11 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
       }
         
       // Redirect based on role
-      if (values.role === "admin") {
-        router.push("/admin")
-      } else {
-        router.push("/shop")
-      }
+      // if (values.role === "admin") {
+      //   router.push("/admin")
+      // } else {
+      //   router.push("/shop")
+      // }
     } catch (error) {
       toast({
         title: "Registration failed",
@@ -90,6 +91,40 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
       })
     }
   }
+
+  // async function onSubmit(values: z.infer<typeof formSchema>) {
+  //   try {
+  //     const imageFile = values.image[0]; // First file
+  //     const formData = new FormData();
+  //     formData.append("image", imageFile);
+  //     formData.append("name", values.name);
+  //     formData.append("email", values.email);
+  //     formData.append("password", values.password);
+  
+  //     // Call your register function with image if applicable
+  //     await register(values.name, values.email, values.password, "user"); // use "user" or modify as needed
+  
+  //     toast({
+  //       title: "Account created",
+  //       description: "You have successfully registered an account.",
+  //     });
+  
+  //     const response = await fetch('/api/email');
+  //     const { isValide } = await response.json();
+  //     if (isValide) {
+  //       sendEmail('Teste', 'danniribeiro01@gmail.com', 'Este é o texto');
+  //     }
+  
+  //     router.push("/shop");
+  //   } catch (error) {
+  //     toast({
+  //       title: "Registration failed",
+  //       description: error instanceof Error ? error.message : "Please try again",
+  //       variant: "destructive",
+  //     });
+  //   }
+  // }
+  
 
   return (
     <div className={cn("grid gap-6", className)} {...props}>
@@ -100,7 +135,7 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel className="mb-1 block text-sm font-medium ">Full Name</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="John Doe" 
@@ -117,7 +152,7 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel className="mb-1 block text-sm font-medium ">Email</FormLabel>
                 <FormControl>
                   <Input 
                     placeholder="example@example.com" 
@@ -134,7 +169,7 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel className="mb-1 block text-sm font-medium ">Password</FormLabel>
                 <FormControl>
                   <Input 
                     type="password" 
@@ -152,7 +187,7 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
+                <FormLabel className="mb-1 block text-sm font-medium ">Confirm Password</FormLabel>
                 <FormControl>
                   <Input 
                     type="password" 
@@ -167,35 +202,69 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
           />
           <FormField
             control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Account Type</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex flex-col space-y-1"
-                    disabled={isLoading}
-                  >
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="user" />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">Customer</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-3 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="admin" />
-                      </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">Admin</FormLabel>
-                    </FormItem>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            name="image"
+            render={({ field }) => {
+              const file = field.value?.[0];
+
+              return (
+                <FormItem>
+                  <FormLabel className="mb-1 block text-sm font-medium">
+                    Profile Image
+                  </FormLabel>
+                  <FormControl>
+                    <div
+                      className={cn(
+                        "relative group flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-xl p-4 transition-colors hover:border-gray-500",
+                        isLoading && "opacity-60 pointer-events-none"
+                      )}
+                    >
+                      {file ? (
+                        <div className="relative">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt="Preview"
+                            className="h-24 w-24 object-cover rounded-full shadow-md"
+                          />
+                          <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                            <span className="text-white text-sm">Change</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center text-gray-500">
+                          <svg
+                            className="w-8 h-8 mb-1"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M7 16l-4-4m0 0l4-4m-4 4h18"
+                            />
+                          </svg>
+                          <span className="text-sm">Drag and drop or click to upload</span>
+                        </div>
+                      )}
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => field.onChange(e.target.files)}
+                        disabled={isLoading}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
+
+
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Creating account..." : "Create account"}
           </Button>

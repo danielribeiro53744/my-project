@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { formatDistanceToNow } from "date-fns"
 import { Button } from "@/components/ui/button"
 
@@ -34,44 +35,65 @@ const posts = [
 
 export default function BlogPage() {
   return (
-    <div className="container mx-auto px-4 pt-32 pb-16">
-      <div className="max-w-3xl mx-auto text-center mb-16">
-        <h1 className="text-4xl font-bold mb-4">Fashion Blog</h1>
-        <p className="text-lg text-muted-foreground">
+    <div className="container mx-auto px-4 sm:px-6 pt-24 pb-12 sm:pt-32 sm:pb-16">
+      {/* Header Section */}
+      <div className="max-w-3xl mx-auto text-center mb-12 sm:mb-16">
+        <h1 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">Fashion Blog</h1>
+        <p className="text-base sm:text-lg text-muted-foreground">
           Insights, trends, and stories from the world of fashion
         </p>
       </div>
 
-      <div className="grid gap-12">
+      {/* Blog Posts */}
+      <div className="grid gap-8 sm:gap-12">
         {posts.map((post) => (
-          <article key={post.id} className="grid md:grid-cols-2 gap-8">
-            <Link href={`/blog/${post.id}`}>
-              <div 
-                className="aspect-[16/10] rounded-lg bg-muted hover:opacity-90 transition-opacity"
-                style={{
-                  backgroundImage: `url(${post.image})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center"
-                }}
+          <article key={post.id} className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+            {/* Image */}
+            <Link href={`/blog/${post.id}`} className="block aspect-[16/10] relative rounded-lg overflow-hidden">
+              <Image
+                src={post.image}
+                alt={post.title}
+                fill
+                className="object-cover hover:opacity-90 transition-opacity"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority={post.id === "1"} // Only prioritize first image
               />
             </Link>
-            <div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                <span>{post.category}</span>
-                <span>•</span>
-                <span>{formatDistanceToNow(new Date(post.date), { addSuffix: true })}</span>
+            
+            {/* Content */}
+            <div className="flex flex-col justify-between">
+              <div>
+                {/* Meta */}
+                <div className="flex items-center gap-3 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+                  <span>{post.category}</span>
+                  <span>•</span>
+                  <span>{formatDistanceToNow(new Date(post.date), { addSuffix: true })}</span>
+                </div>
+                
+                {/* Title */}
+                <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">
+                  <Link href={`/blog/${post.id}`} className="hover:underline">
+                    {post.title}
+                  </Link>
+                </h2>
+                
+                {/* Excerpt */}
+                <p className="text-muted-foreground text-sm sm:text-base mb-4 sm:mb-6">
+                  {post.excerpt}
+                </p>
               </div>
-              <h2 className="text-2xl font-bold mb-4">
-                <Link href={`/blog/${post.id}`} className="hover:underline">
-                  {post.title}
-                </Link>
-              </h2>
-              <p className="text-muted-foreground mb-4">{post.excerpt}</p>
+              
+              {/* Footer */}
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <p className="font-medium">{post.author}</p>
+                  <p className="font-medium text-sm sm:text-base">{post.author}</p>
                 </div>
-                <Button variant="outline" asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="text-xs sm:text-sm"
+                  asChild
+                >
                   <Link href={`/blog/${post.id}`}>Read More</Link>
                 </Button>
               </div>

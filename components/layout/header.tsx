@@ -225,7 +225,7 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-background border-b">
+        <div className="md:hidden bg-background border-b transition-all duration-300 ease-in-out animate-slideDown">
           <div className="container mx-auto px-4 py-4">
             <nav className="flex flex-col space-y-4">
               {navItems.map((item) => (
@@ -241,6 +241,8 @@ const Header = () => {
                   {item.name}
                 </Link>
               ))}
+     
+
               <div className="pt-2 border-t">
                 {authState.isAuthenticated ? (
                   <>
