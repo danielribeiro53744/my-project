@@ -15,12 +15,13 @@ export default function SalePage() {
   )
 
   return (
-    <div className="container mx-auto px-4 pt-32 pb-16">
-      <div className="relative mb-12 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">
+    <div className="container mx-auto px-4 sm:px-6 pt-24 pb-12 sm:pt-32 sm:pb-16">
+      {/* Hero Section */}
+      <div className="relative mb-8 sm:mb-12 text-center">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
           Sale
         </h1>
-        <p className="text-muted-foreground text-lg mb-6">
+        <p className="text-muted-foreground text-base sm:text-lg mb-4 sm:mb-6">
           Save up to {discountRange.max}% off on selected items
         </p>
         <div 
@@ -32,24 +33,26 @@ export default function SalePage() {
       </div>
 
       {products.length === 0 ? (
-        <div className="text-center py-16">
-          <h3 className="text-xl font-medium mb-2">No sale items available</h3>
-          <p className="text-muted-foreground">
+        <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center">
+          <h3 className="text-lg sm:text-xl font-medium mb-2">No sale items available</h3>
+          <p className="text-muted-foreground text-sm sm:text-base">
             Check back soon for new discounts and promotions
           </p>
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between mb-8">
-            <p className="text-muted-foreground">
+          {/* Product Count and Discount Range */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6 sm:mb-8">
+            <p className="text-muted-foreground text-sm sm:text-base">
               Showing {products.length} sale items
             </p>
-            <p className="text-sm">
-              Discounts from {discountRange.min}% to {discountRange.max}% off
+            <p className="text-xs sm:text-sm bg-destructive/10 text-destructive px-3 py-1 rounded-full">
+              Discounts {discountRange.min}% - {discountRange.max}% off
             </p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {/* Products Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

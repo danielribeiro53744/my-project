@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Building, Package, ShoppingBag, Users } from "lucide-react"
+import { Building, Package, ShoppingBag, Users, Menu } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -15,12 +15,15 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { getAllProducts } from "@/objects/products"
 import AdminSidebar from "@/components/admin/sidebar"
 import ProductTable from "@/components/admin/product-table"
+import { Button } from "@/components/ui/button"
 
 export default function AdminDashboard() {
   const [selectedTab, setSelectedTab] = useState("overview")
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const products = getAllProducts()
 
   const stats = [
@@ -52,32 +55,54 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex h-screen overflow-hidden pt-16">
-      <AdminSidebar />
-      <div className="flex-1 overflow-y-auto pt-6 px-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      {/* Mobile Sidebar */}
+      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+        <SheetTrigger asChild className="md:hidden absolute top-4 left-4 z-50">
+          <Button variant="outline" size="icon">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-[280px] px-0">
+          <AdminSidebar />
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar */}
+      <div className="hidden md:flex">
+        <AdminSidebar />
+      </div>
+
+      <div className="flex-1 overflow-y-auto pt-4 px-4 sm:pt-6 sm:px-6">
+        <div className="flex items-center justify-between mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
         </div>
 
-        <Tabs defaultValue="overview" onValueChange={setSelectedTab} className="space-y-6">
-          <TabsList className="bg-muted">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
+        <Tabs 
+          defaultValue="overview" 
+          onValueChange={setSelectedTab} 
+          className="space-y-4 sm:space-y-6"
+        >
+          <TabsList className="bg-muted w-full overflow-x-auto">
+            <div className="flex space-x-1">
+              <TabsTrigger value="overview" className="text-xs sm:text-sm px-3 py-1">Overview</TabsTrigger>
+              <TabsTrigger value="products" className="text-xs sm:text-sm px-3 py-1">Products</TabsTrigger>
+              <TabsTrigger value="orders" className="text-xs sm:text-sm px-3 py-1">Orders</TabsTrigger>
+              <TabsTrigger value="customers" className="text-xs sm:text-sm px-3 py-1">Customers</TabsTrigger>
+            </div>
           </TabsList>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <TabsContent value="overview" className="space-y-4 sm:space-y-6">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {stats.map((stat) => (
-                <Card key={stat.title}>
+                <Card key={stat.title} className="min-w-[180px]">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
+                    <CardTitle className="text-xs sm:text-sm font-medium">
                       {stat.title}
                     </CardTitle>
-                    <stat.icon className="h-4 w-4 text-muted-foreground" />
+                    <stat.icon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{stat.value}</div>
+                    <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {stat.description}
                     </p>
@@ -86,40 +111,40 @@ export default function AdminDashboard() {
               ))}
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <Card className="col-span-4">
+            <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
+              <Card className="col-span-1 lg:col-span-4">
                 <CardHeader>
-                  <CardTitle>Overview</CardTitle>
+                  <CardTitle className="text-sm sm:text-base">Overview</CardTitle>
                 </CardHeader>
                 <CardContent className="pl-2">
-                  <div className="h-[240px] flex items-center justify-center text-muted-foreground">
+                  <div className="h-[180px] sm:h-[240px] flex items-center justify-center text-muted-foreground text-sm">
                     Sales chart visualization would go here
                   </div>
                 </CardContent>
               </Card>
-              <Card className="col-span-3">
+              <Card className="col-span-1 lg:col-span-3">
                 <CardHeader>
-                  <CardTitle>Recent Sales</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-sm sm:text-base">Recent Sales</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
                     Latest transactions
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-8">
+                  <div className="space-y-4 sm:space-y-6">
                     {[1, 2, 3, 4].map((i) => (
                       <div key={i} className="flex items-center">
-                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                        <div className="h-7 w-7 sm:h-9 sm:w-9 rounded-full bg-primary/10 flex items-center justify-center mr-2 sm:mr-3">
                           <span className="font-medium text-xs text-primary">
                             {String.fromCharCode(64 + i)}
                           </span>
                         </div>
-                        <div className="space-y-1 flex-1">
-                          <p className="text-sm font-medium">Customer {i}</p>
-                          <p className="text-xs text-muted-foreground">
+                        <div className="space-y-0.5 sm:space-y-1 flex-1 min-w-0">
+                          <p className="text-xs sm:text-sm font-medium truncate">Customer {i}</p>
+                          <p className="text-xs text-muted-foreground truncate">
                             {i} product{i > 1 ? "s" : ""} • ${(i * 39.99).toFixed(2)}
                           </p>
                         </div>
-                        <div className="text-sm text-right font-medium">
+                        <div className="text-xs sm:text-sm text-right font-medium">
                           ${(i * 39.99).toFixed(2)}
                         </div>
                       </div>
@@ -137,13 +162,13 @@ export default function AdminDashboard() {
           <TabsContent value="orders">
             <Card>
               <CardHeader>
-                <CardTitle>Orders</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-sm sm:text-base">Orders</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   Manage customer orders
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-center h-60 text-muted-foreground">
+                <div className="flex items-center justify-center h-40 sm:h-60 text-muted-foreground text-sm">
                   Orders management interface would go here
                 </div>
               </CardContent>
@@ -153,13 +178,13 @@ export default function AdminDashboard() {
           <TabsContent value="customers">
             <Card>
               <CardHeader>
-                <CardTitle>Customers</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-sm sm:text-base">Customers</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">
                   View and manage customer accounts
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-center h-60 text-muted-foreground">
+                <div className="flex items-center justify-center h-40 sm:h-60 text-muted-foreground text-sm">
                   Customer management interface would go here
                 </div>
               </CardContent>

@@ -1,16 +1,15 @@
-
-
 import { getAllProducts, getProductsByGender } from "@/objects/products"
 import { ProductCard } from "@/components/shop/product-card"
 import { Metadata } from "next";
 
-type ValidSlug =  'men' | 'women' | 'accessories' | 'new-arrivals' ;
+type ValidSlug = 'men' | 'women' | 'accessories' | 'new-arrivals';
 
 type CategoryPageProps = {
   params: Promise<{
     slug: ValidSlug;
   }>;
 }
+
 export async function generateStaticParams() {
   const slugs = ['men', 'women', 'accessories', 'new-arrivals'];
   
@@ -19,23 +18,24 @@ export async function generateStaticParams() {
   }));
 }
 
-// 3. Generate metadata
-// export async function generateMetadata({
-//   params,
-// }: {
-//   params: Promise<{
-//     slug: ValidSlug;
-//   }>;
-// }): Promise<Metadata> {
-//   return {
-//     title: `${(await params).slug.charAt(0).toUpperCase() + (await params).slug.slice(1)} Category`,
-//   };
-// }
-
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{
+    slug: ValidSlug;
+  }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const title = `${slug.charAt(0).toUpperCase() + slug.slice(1).replace('-', ' ')} Collection`;
+  
+  return {
+    title: title,
+    description: `Browse our ${slug} collection of premium fashion items`,
+  };
+}
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const realParams = await params;
-  const { slug } = realParams;
+  const { slug } = await params;
   let products = []
   let categoryTitle = ""
   let categoryDescription = ""
@@ -58,28 +58,29 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     categoryTitle = "New Arrivals"
     categoryDescription = "Discover our latest products and collections"
   } else {
-    // Default case
     products = getAllProducts()
     categoryTitle = "All Products"
     categoryDescription = "Browse our complete collection"
   }
 
   return (
-    <div className="container mx-auto px-4 pt-32 pb-16">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">{categoryTitle}</h1>
-        <p className="text-muted-foreground">{categoryDescription}</p>
+    <div className="container mx-auto px-4 sm:px-6 pt-24 pb-16 sm:pt-32">
+      {/* Header Section */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">{categoryTitle}</h1>
+        <p className="text-muted-foreground text-sm sm:text-base">{categoryDescription}</p>
       </div>
       
+      {/* Products Grid */}
       {products.length === 0 ? (
-        <div className="text-center py-16">
-          <h3 className="text-xl font-medium mb-2">No products found</h3>
-          <p className="text-muted-foreground">
+        <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center">
+          <h3 className="text-lg sm:text-xl font-medium mb-2">No products found</h3>
+          <p className="text-muted-foreground text-sm sm:text-base mb-4">
             This category is currently empty or being updated.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
