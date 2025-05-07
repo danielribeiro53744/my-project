@@ -17,8 +17,8 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, role: 'user' | 'admin') => Promise<void>;
   logout: () => void;
+  isAuth: (isAuthenticated: boolean, user: User) => Promise<void>;
 }
-
 export const useAuth = create<AuthState>()(
   persist(
     (set) => ({
@@ -77,6 +77,26 @@ export const useAuth = create<AuthState>()(
       
       logout: () => {
         set({ user: null, token: null });
+      },
+      isAuth:  async () => {
+        try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/auth/session`, {
+          credentials: 'include', // Ensures cookies are sent
+          cache: 'no-store', // Prevents caching of auth state
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to check authentication');
+        }
+    
+        return response.json();
+      } catch (error) {
+        console.error('Authentication check failed:', error);
+        return {
+          isAuthenticated: false,
+          user: null,
+        };
+      }
       }
     }),
     {

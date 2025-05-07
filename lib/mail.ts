@@ -2,13 +2,13 @@ import emailjs from '@emailjs/browser';
 
 export const sendEmail = (subject: string, to: string, text: string) => {
     
-  emailjs.send(process.env.EMAILJS_SERVICE_ID || '', process.env.EMAILJS_TEMPLATE_ID || '', 
+  emailjs.send('service_bscwi4s', 'template_s34rwdj', 
       {
       subject,
       to,
       text
       }
-      , process.env.EMAILJS_PUBLIC_KEY || '')
+      , 'whWmKQtWdSto4tUqi')
       .then((result) => {
           console.log(result)
       }, (error) => {

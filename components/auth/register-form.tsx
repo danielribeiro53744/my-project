@@ -69,7 +69,13 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
         description: "You have successfully registered an account.",
       })
       
-        // sendEmail()
+
+      const response = await fetch('/api/email',);
+      const { isValide } = await response.json();
+      if(isValide){
+        sendEmail('Teste','danniribeiro01@gmail.com','Este é o texto')
+      }
+        
       // Redirect based on role
       if (values.role === "admin") {
         router.push("/admin")
