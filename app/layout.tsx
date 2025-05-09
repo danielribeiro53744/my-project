@@ -7,6 +7,7 @@ import { LoadingScreen } from '@/components/loading/loading';
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import { MouseEffects } from '@/components/mouse/MouseEffects';
+import { ClientLayout } from '@/components/layout/client';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -33,11 +34,9 @@ export default function RootLayout({
           <MouseEffects />
           <LoadingScreen />
           <div className="transition-opacity duration-300">
-            <Header />
-            <main className="min-h-screen">
+          <ClientLayout>
               {children}
-            </main>
-            <Footer />
+            </ClientLayout>
           </div>
           <Toaster />
         </ThemeProvider>
