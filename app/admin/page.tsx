@@ -31,13 +31,14 @@ export default function AdminDashboard() {
   const [selectedTab, setSelectedTab] = useState("overview")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { products, fetchAllProducts } = useProductStore()
-  const { user } = useAuth();
-  console.log(user?.role)
-  if(user && user.role != 'admin'){
-    // router.push('/login') 
-    window.location.href = '/shop'
-  }else if(!user){
-    window.location.href = '/login'
+  const { user, isLoading } = useAuth();
+  if (typeof window !== "undefined") {
+    // Client-side-only code
+      if (user && user.role !== 'admin' && isLoading) {
+        window.location.href = '/shop';
+      } else if (!user && isLoading) {
+        window.location.href = '/login';
+      }
   }
   // ✅ Fetch products on mount
   useEffect(() => {
