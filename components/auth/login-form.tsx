@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { redirect, useRouter } from "next/navigation"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/form"
 import GoogleButton from "./googleButton"
 import { sendEmail } from "@/lib/mail"
+import { RedirectBasedOnRole} from "@/lib/redirect"
 
 const formSchema = z.object({
   email: z.string().email({
@@ -38,8 +39,13 @@ interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 export default function LoginForm({ className, ...props }: LoginFormProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const { login, isLoading } = useAuth()
-
+  const { login, user, isLoading } = useAuth()
+  if(user){
+    const redirectPath = user?.role === "admin" ? "/admin" : "/shop";
+      setTimeout(() => {
+        router.push(redirectPath);
+      }, 1500);
+  }
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -54,15 +60,14 @@ export default function LoginForm({ className, ...props }: LoginFormProps) {
       
       toast({
         title: "Login successful",
+        description: "Redirecting you to your dashboard...",
       })
       
-      // Redirect based on role
-      const user = useAuth.getState().user
-      if (user?.role === 'admin') {
-        router.push('/admin')
-      } else {
-        router.push('/shop')
-      }
+      // Redirect based on role after login
+      // const redirectPath = user.role === "admin" ? "/admin" : "/shop";
+      // setTimeout(() => {
+      //   router.push(redirectPath);
+      // }, 1500);
     } catch (error) {
       toast({
         title: "Login failed",

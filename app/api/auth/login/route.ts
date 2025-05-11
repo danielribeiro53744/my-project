@@ -1,93 +1,92 @@
 import { NextResponse } from 'next/server';
 import { compare } from 'bcryptjs';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { SignJWT } from 'jose';
 import { z } from 'zod';
 import { db } from '@vercel/postgres';
-import { Rows } from 'lucide-react';
 
+// === Input Validation ===
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string()
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-const DB_PATH = path.join(process.cwd(), 'data/users.json');
+// === JWT Secret ===
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key'
 );
 
+// === JWT Sign Function ===
+async function generateJWT(user: { id: string, email: string, role: string }) {
+  return await new SignJWT(user)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime('24h')
+    .sign(JWT_SECRET);
+}
+
+// === POST /api/auth/login ===
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const client = await db.connect();
     const validatedData = loginSchema.parse(body);
 
+    const client = await db.connect();
+
     const { rows } = await client.sql`
-    SELECT * FROM users 
-    WHERE data->>'email' = ${validatedData.email}
-    LIMIT 1
+      SELECT * FROM users 
+      WHERE data->>'email' = ${validatedData.email}
+      LIMIT 1
     `;
-    
+
     if (rows.length === 0) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    // console.log(rows)
-    const user = rows.length === 0 ? null : rows[0].data;  //Because LIMIT 1, and can only exist 1 user.email
-    
+
+    const user = rows[0].data;
+
     const isPasswordValid = await compare(validatedData.password, user.password);
-    
     if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
-    
-    // Generate JWT
-    const token = await new SignJWT({ 
+
+    const token = await generateJWT({
       id: user.id,
       email: user.email,
-      role: user.role 
-    })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('24h')
-      .sign(JWT_SECRET);
-    
-    const { password, ...userWithoutPassword } = user;
-    
-    // In your login endpoint (after successful auth)
-    const response = NextResponse.json({
-      user: userWithoutPassword,
-      token // Still return token for clients that need it
+      role: user.role,
     });
 
+    const { password, ...userWithoutPassword } = user;
+
+    const response = NextResponse.json({
+      user: {
+        id: userWithoutPassword.id,
+        name: userWithoutPassword.name,
+        email: userWithoutPassword.email,
+        role: userWithoutPassword.role,
+        image: userWithoutPassword.image || null, // Include image URL
+      },
+      token, // JWT token for API clients (optional)
+    });
+
+    // Set Secure Cookie
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 60 * 60 * 24 // 1 day
+      path: '/',
+      maxAge: 60 * 60 * 24, // 1 day
     });
 
     return response;
-    
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.errors }, { status: 400 });
     }
-    
-    return NextResponse.json(
-      { error: 'Internal server error' }, //error
-      { status: 500 }
-    );
+
+    console.error("Login error:", error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
 /**
  * @swagger
  * tags:
@@ -130,63 +129,26 @@ export async function POST(req: Request) {
  *                   properties:
  *                     id:
  *                       type: string
- *                       format: uuid
- *                       description: Unique identifier of the user.
  *                     name:
  *                       type: string
- *                       description: The user's name.
  *                     email:
  *                       type: string
  *                       format: email
- *                       description: The user's email address.
  *                     role:
  *                       type: string
  *                       enum: [user, admin]
- *                       description: The user's role in the system.
+ *                     image:
+ *                       type: string
+ *                       format: uri
+ *                       description: URL or base64 string for profile image (optional)
  *                 token:
  *                   type: string
- *                   description: The generated JWT token for the user.
  *       400:
- *         description: Invalid input data (e.g., incorrect email or password format).
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       message:
- *                         type: string
- *                       path:
- *                         type: string
+ *         description: Invalid input data (e.g., email format or password too short).
  *       401:
  *         description: Invalid credentials (incorrect email or password).
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
  *       404:
  *         description: User not found.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
  *       500:
  *         description: Internal server error.
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 error:
- *                   type: string
  */
