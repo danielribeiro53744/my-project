@@ -1,6 +1,6 @@
 import { orderSchema } from '@/lib/schemas/order';
 import { db } from '@vercel/postgres';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 // POST /api/orders
 export async function POST(req: Request) {
@@ -55,6 +55,25 @@ export async function POST(req: Request) {
   }
 }
 
+// GET /api/admin/orders
+export async function GET(req: NextRequest) {
+
+  try {
+    const client = await db.connect();
+    const result = await client.sql`SELECT id, data FROM orders ORDER BY data->>'createdAt' DESC`;
+    client.release();
+
+    const orders = result.rows.map(row => ({
+      id: row.id,
+      ...row.data,
+    }));
+
+    return NextResponse.json(orders);
+  } catch (error) {
+    console.error("[ADMIN_ORDERS_GET]", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
 
 /**
  * @swagger
@@ -63,6 +82,60 @@ export async function POST(req: Request) {
  *     description: Operations related to orders management
  * 
  * /api/orders:
+ *   get:
+ *     tags:
+ *       - Orders
+ *     summary: Get all orders (Admin only)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: A list of all orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                   userId:
+ *                     type: string
+ *                   items:
+ *                     type: array
+ *                     items:
+ *                       $ref: '#/components/schemas/CartItem'
+ *                   total:
+ *                     type: number
+ *                   status:
+ *                     type: string
+ *                   shippingAddress:
+ *                     $ref: '#/components/schemas/ShippingAddress'
+ *                   paymentIntentId:
+ *                     type: string
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *       403:
+ *         description: Unauthorized access
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
  *   post:
  *     tags:
  *       - Orders

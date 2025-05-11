@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -31,18 +31,21 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { useProductStore } from "@/lib/stores/product"
 import { Product } from "@/objects/products"
 
-interface ProductTableProps {
-  products: Product[]
-}
-
-export default function ProductTable({ products }: ProductTableProps) {
+export default function ProductTable() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null)
   const { toast } = useToast()
+
+  const { products, fetchAllProducts } = useProductStore()
+
+  useEffect(() => {
+    fetchAllProducts()
+  }, [fetchAllProducts])
 
   const handleSelectAll = () => {
     if (selectedProducts.length === products.length) {
@@ -53,11 +56,11 @@ export default function ProductTable({ products }: ProductTableProps) {
   }
 
   const handleSelectProduct = (productId: string) => {
-    if (selectedProducts.includes(productId)) {
-      setSelectedProducts(selectedProducts.filter((id) => id !== productId))
-    } else {
-      setSelectedProducts([...selectedProducts, productId])
-    }
+    setSelectedProducts((prev) =>
+      prev.includes(productId)
+        ? prev.filter((id) => id !== productId)
+        : [...prev, productId]
+    )
   }
 
   const handleDelete = (product: Product) => {
@@ -126,7 +129,7 @@ export default function ProductTable({ products }: ProductTableProps) {
                 </TableCell>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-3">
-                    <div 
+                    <div
                       className="w-10 h-10 rounded bg-muted"
                       style={{
                         backgroundImage: `url(${product.images[0]})`,
@@ -141,13 +144,15 @@ export default function ProductTable({ products }: ProductTableProps) {
                 <TableCell>
                   {product.discountPrice ? (
                     <div>
-                      <span className="font-medium">${product.discountPrice.toFixed(2)}</span>
+                      <span className="font-medium">
+                        ${Number(product.discountPrice).toFixed(2)}
+                      </span>
                       <span className="text-muted-foreground line-through text-xs ml-1">
-                        ${product.price.toFixed(2)}
+                        ${Number(product.price).toFixed(2)}
                       </span>
                     </div>
                   ) : (
-                    <span>${product.price.toFixed(2)}</span>
+                    <span>${Number(product.price).toFixed(2)}</span>
                   )}
                 </TableCell>
                 <TableCell>
@@ -183,7 +188,7 @@ export default function ProductTable({ products }: ProductTableProps) {
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => handleDelete(product)}
                         className="text-red-600 focus:text-red-600"
                       >
@@ -210,16 +215,10 @@ export default function ProductTable({ products }: ProductTableProps) {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDelete}
-            >
+            <Button variant="destructive" onClick={confirmDelete}>
               Delete
             </Button>
           </DialogFooter>
@@ -243,7 +242,6 @@ export default function ProductTable({ products }: ProductTableProps) {
               <Input
                 id="name"
                 defaultValue={currentProduct?.name}
-                className="col-span-3"
               />
             </div>
             <div className="grid gap-2">
@@ -253,7 +251,6 @@ export default function ProductTable({ products }: ProductTableProps) {
               <Input
                 id="price"
                 defaultValue={currentProduct?.price}
-                className="col-span-3"
               />
             </div>
             <div className="grid gap-2">
@@ -263,7 +260,6 @@ export default function ProductTable({ products }: ProductTableProps) {
               <Input
                 id="category"
                 defaultValue={currentProduct?.category}
-                className="col-span-3"
               />
             </div>
           </div>

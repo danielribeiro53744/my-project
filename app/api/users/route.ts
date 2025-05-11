@@ -68,6 +68,34 @@ export async function POST(req: Request) {
     }
   }
 
+  export async function GET() {
+  try {
+    const client = await db.connect();
+    
+    // Fetch all users
+    const { rows } = await client.sql`
+      SELECT data FROM users
+    `;
+    
+    client.release();
+    
+    // Remove passwords from response
+    const usersWithoutPasswords = rows.map(row => {
+      const { password, ...userData } = row.data;
+      return userData;
+    });
+    
+    return NextResponse.json(usersWithoutPasswords);
+    
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 /**
  * @swagger
  * tags:
