@@ -25,6 +25,8 @@ import GoogleButton from "./googleButton"
 import { sendEmail } from "@/lib/action/mail"
 import { RedirectBasedOnRole} from "@/lib/redirect"
 import { formSchema } from "@/lib/schemas/loginForm"
+import { useUserStore } from "@/lib/stores/user"
+import { useCart } from "@/lib/stores/cart"
 
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -33,6 +35,7 @@ export default function LoginForm({ className, ...props }: LoginFormProps) {
   const router = useRouter()
   const { toast } = useToast()
   const { login, user, isLoading } = useAuth()
+  const {  items, addItem } = useCart()
   if(user){
     const redirectPath = user?.role === "admin" ? "/admin" : "/shop";
       setTimeout(() => {
@@ -49,12 +52,16 @@ export default function LoginForm({ className, ...props }: LoginFormProps) {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
+      // const anonymousCart = items;
       await login(values.email, values.password)
       
       toast({
         title: "Login successful",
         description: "Redirecting you to your dashboard...",
       })
+      // anonymousCart.forEach(item => {
+      //   addItem(item.product, item.size)
+      // });
       
       // Redirect based on role after login
       // const redirectPath = user.role === "admin" ? "/admin" : "/shop";
