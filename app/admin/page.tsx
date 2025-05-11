@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Building, Package, ShoppingBag, Users, Menu } from "lucide-react"
 import {
   Card,
@@ -16,15 +16,33 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { getAllProducts } from "@/objects/products"
 import AdminSidebar from "@/components/admin/sidebar"
 import ProductTable from "@/components/admin/product-table"
 import { Button } from "@/components/ui/button"
+import { useProductStore } from "@/lib/stores/product"
+import AdminOrdersPage from "./orders/page"
+import CustomerPage from "./customer/page"
+import { RedirectBasedOnRole } from "@/lib/redirect"
+import { useAuth } from "@/lib/stores/auth"
+
 
 export default function AdminDashboard() {
+
   const [selectedTab, setSelectedTab] = useState("overview")
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const products = getAllProducts()
+  const { products, fetchAllProducts } = useProductStore()
+  const { user } = useAuth();
+  console.log(user?.role)
+  if(user && user.role != 'admin'){
+    // router.push('/login') 
+    window.location.href = '/shop'
+  }else if(!user){
+    window.location.href = '/login'
+  }
+  // ✅ Fetch products on mount
+  useEffect(() => {
+    fetchAllProducts()
+  }, [fetchAllProducts])
 
   const stats = [
     {
@@ -52,7 +70,6 @@ export default function AdminDashboard() {
       description: "23 new customers this week",
     },
   ]
-
   return (
     <div className="flex h-screen overflow-hidden pt-16">
       {/* Mobile Sidebar */}
@@ -156,39 +173,15 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="products">
-            <ProductTable products={products} />
+            <ProductTable />
           </TabsContent>
 
           <TabsContent value="orders">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm sm:text-base">Orders</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
-                  Manage customer orders
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center h-40 sm:h-60 text-muted-foreground text-sm">
-                  Orders management interface would go here
-                </div>
-              </CardContent>
-            </Card>
+            <AdminOrdersPage />
           </TabsContent>
 
           <TabsContent value="customers">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm sm:text-base">Customers</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">
-                  View and manage customer accounts
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-center h-40 sm:h-60 text-muted-foreground text-sm">
-                  Customer management interface would go here
-                </div>
-              </CardContent>
-            </Card>
+            <CustomerPage />
           </TabsContent>
         </Tabs>
       </div>
