@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Product } from '@/objects/products'
+import { Product } from '@/lib/interfaces/products'
 import { CartItem } from '../interfaces/cart'
 
 interface CartStore {

@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ProductCard } from "@/components/shop/product-card"
-import { getFeaturedProducts } from "@/objects/products"
+import { getFeaturedProducts } from "@/lib/interfaces/products"
 
 const FeaturedProducts = () => {
   const products = getFeaturedProducts()

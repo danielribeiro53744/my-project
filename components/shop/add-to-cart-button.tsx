@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { MinusIcon, PlusIcon, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Product } from "@/objects/products"
+import { Product } from "@/lib/interfaces/products"
 import { useCart } from "@/lib/stores/cart"
 import { useToast } from "@/hooks/use-toast"
 
