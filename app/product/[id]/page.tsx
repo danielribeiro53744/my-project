@@ -1,4 +1,4 @@
-import { getAllProducts, getProductById } from "@/objects/products"
+import { getAllProducts, getProductById } from "@/lib/interfaces/products"
 import { ChevronLeft, Heart, MinusIcon, PlusIcon, Share2, ShoppingCart, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
