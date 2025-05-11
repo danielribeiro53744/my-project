@@ -8,15 +8,16 @@ import { Button } from '@/components/ui/button';
 import { MoonIcon, SunIcon, DashboardIcon } from '@radix-ui/react-icons';
 
 export default function SwaggerPage() {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
-
-    if (user && user.role !== 'admin') {
-      window.location.href = '/shop';
-    } else if (!user) {
-      window.location.href = '/login';
-    }
-
+  if (typeof window !== "undefined") {
+    // Client-side-only code
+      if (user && user.role !== 'admin' && isLoading) {
+        window.location.href = '/shop';
+      } else if (!user && isLoading) {
+        window.location.href = '/login';
+      }
+  }
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
