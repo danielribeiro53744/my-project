@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useCart } from '@/lib/cart'
+import { useCart } from '@/lib/stores/cart'
 
 export default function CheckoutSuccessPage() {
   const router = useRouter()

@@ -1,48 +1,6 @@
+import { orderSchema } from '@/lib/schemas/order';
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
-
-const shippingAddressSchema = z.object({
-  name: z.string(),
-  address: z.string(),
-  city: z.string(),
-  country: z.string(),
-  postalCode: z.string()
-});
-
-const productSchema = z.object({
-  id: z.string(),//.uuid(),
-  name: z.string(),
-  description: z.string(),
-  price: z.number().positive(),
-  discountPrice: z.number().positive().optional(),
-  category: z.string(),
-  gender: z.enum(['men', 'women', 'unisex']),
-  sizes: z.array(z.string()),
-  colors: z.array(z.object({
-    name: z.string(),
-    hex: z.string().regex(/^#([0-9A-Fa-f]{3}){1,2}$/) // hex color format validation
-  })),
-  images: z.array(z.string().url()),
-  featured: z.boolean(),
-  isBestSeller: z.boolean(),
-  isNewArrival: z.boolean()
-});
-
-const cartItemSchema = z.object({
-  product: productSchema,
-  quantity: z.number().int().positive(),
-  size: z.string() // Could also use z.enum(['S', 'M', 'L', 'XL']) for specific sizes
-});
-
-const orderSchema = z.object({
-  userId: z.string(),//.uuid(),
-  items: z.array(cartItemSchema),
-  total: z.number().positive(),
-  status: z.enum(['pending', 'completed', 'cancelled']).default('pending'),
-  shippingAddress: shippingAddressSchema,
-  paymentIntentId: z.string().optional()
-});
 
 // POST /api/orders
 export async function POST(req: Request) {

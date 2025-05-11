@@ -1,8 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAuth } from "@/lib/auth"
-import { Order } from "@/lib/orders"
+import { useAuth } from "@/lib/stores/auth"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -21,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import Link from "next/link"
+import { Order } from "@/lib/interfaces/order"
 
 export default function AdminOrdersPage() {
   const { user } = useAuth()

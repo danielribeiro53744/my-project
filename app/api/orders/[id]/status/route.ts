@@ -1,11 +1,7 @@
+import { statusSchema } from '@/lib/schemas/status';
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
-// Validate the request body
-const statusSchema = z.object({
-  status: z.enum(['pending', 'completed', 'cancelled']),
-});
 
 // PUT /api/orders/[orderId]/status
 export async function PUT(

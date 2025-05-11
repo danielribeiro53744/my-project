@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/action/utils"
 
 export function LoadingScreen() {
   const [isLoading, setIsLoading] = useState(true)

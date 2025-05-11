@@ -2,22 +2,10 @@ import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import { z } from 'zod';
 import { db } from '@vercel/postgres';
+import { formDataUserSchema } from '@/lib/schemas/userDataForm';
 
-// Schema for JSON requests
-const jsonUserSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
-  image: z.string().optional()
-});
 
 // Schema for FormData requests (image is File instead of URL)
-const formDataUserSchema = z.object({
-  name: z.string().min(2),
-  email: z.string().email(),
-  password: z.string().min(8),
-  image: z.string().optional().nullable()
-});
 
 export async function POST(req: Request) {
   try {

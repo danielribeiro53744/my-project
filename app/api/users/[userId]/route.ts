@@ -1,39 +1,8 @@
+import { userSchema } from "@/lib/schemas/user";
 import { db } from "@vercel/postgres";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-const productSchema = z.object({
-    id: z.string().uuid(),
-    name: z.string(),
-    description: z.string(),
-    price: z.number().positive(),
-    discountPrice: z.number().positive().optional(),
-    category: z.string(),
-    gender: z.enum(['men', 'women', 'unisex']),
-    sizes: z.array(z.string()),
-    colors: z.array(z.object({
-      name: z.string(),
-      hex: z.string().regex(/^#([0-9A-Fa-f]{3}){1,2}$/) // hex color format validation
-    })),
-    images: z.array(z.string().url()),
-    featured: z.boolean(),
-    isBestSeller: z.boolean(),
-    isNewArrival: z.boolean()
-  });
-  
-  const cartItemSchema = z.object({
-    product: productSchema,
-    quantity: z.number().int().positive(),
-    size: z.string() // Could also use z.enum(['S', 'M', 'L', 'XL']) for specific sizes
-  });
-  
-  const userSchema = z.object({
-    name: z.string().min(3),
-    email: z.string().email(),
-    password: z.string().min(8),
-    role: z.enum(['user', 'admin']).default('user'),
-    cart: z.array(cartItemSchema).optional().default([])
-  });
   
 export async function GET(
     req: Request,

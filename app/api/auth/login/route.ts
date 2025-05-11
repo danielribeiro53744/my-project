@@ -3,12 +3,8 @@ import { compare } from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { z } from 'zod';
 import { db } from '@vercel/postgres';
+import { formSchema } from '@/lib/schemas/loginForm';
 
-// === Input Validation ===
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
 
 // === JWT Secret ===
 const JWT_SECRET = new TextEncoder().encode(
@@ -27,7 +23,7 @@ async function generateJWT(user: { id: string, email: string, role: string }) {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const validatedData = loginSchema.parse(body);
+    const validatedData = formSchema.parse(body);
 
     const client = await db.connect();
 

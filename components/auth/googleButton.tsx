@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/stores/auth";
 import React, { useEffect, useState } from "react";
 import emailjs from '@emailjs/browser';
 import { useTheme } from "next-themes"; // optional if you're using next-themes
