@@ -5,14 +5,11 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import emailjs from '@emailjs/browser';
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/lib/auth"
+import { uploadImageToStorage, useAuth } from "@/lib/auth"
 import {
   Form,
   FormControl,
@@ -22,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import GoogleButton from "./googleButton"
-import { sendEmail } from "@/lib/mail"
+import { RedirectBasedOnRole } from "@/lib/redirect"
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -35,21 +32,18 @@ const formSchema = z.object({
     message: "Password must be at least 8 characters long",
   }),
   confirmPassword: z.string(),
-  image: z.any().refine(file => file?.length === 1, {
-    message: "Please upload an image",
-  }),
+  image: z.instanceof(File).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
-
 
 interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export default function RegisterForm({ className, ...props }: RegisterFormProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const { register, isLoading } = useAuth()
+  const { user, login,register, isLoading } = useAuth()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,31 +52,62 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
       email: "",
       password: "",
       confirmPassword: "",
-      image: undefined,
-    },    
+    },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      const result = await register(values.name, values.email, values.password, 'user')
-      toast({
-        title: "Account created",
-        description: "You have successfully registered an account.",
-      })
+      const formData = new FormData()
+      formData.append('name', values.name)
+      formData.append('email', values.email)
+      formData.append('password', values.password)
       
-
-      const response = await fetch('/api/email',);
-      const { isValide } = await response.json();
-      if(isValide){
-        sendEmail('Teste','danniribeiro01@gmail.com','Este é o texto')
+      // Handle image upload if exists
+      if (values.image) {
+        const imageFormData = new FormData()
+        imageFormData.append('image', values.image)
+        const imageUrl = await uploadImageToStorage(imageFormData)
+        // formData.append('image', imageUrl)
+        if (imageUrl) {
+          formData.append('image', imageUrl)
+        } else {
+          throw new Error('Image upload failed')
+        }
       }
-        
-      // Redirect based on role
-      // if (values.role === "admin") {
-      //   router.push("/admin")
-      // } else {
-      //   router.push("/shop")
-      // }
+
+      // Call register with form data
+      const user = await register(formData)
+      toast({
+        title: "Registration successful",
+        description: "Your account has been created",
+      })
+       // Automatic login after registration
+    try {
+      await login(values.email, values.password);
+      
+      toast({
+        title: "🔐 Login Successful",
+        description: "Redirecting you to your dashboard...",
+        duration: 2000
+      });
+
+      // Redirect based on role after login
+      const redirectPath = user.role === "admin" ? "/admin" : "/shop";
+      setTimeout(() => {
+        router.push(redirectPath);
+      }, 1500);
+
+    } catch (loginError) {
+      console.error('Auto-login failed:', loginError);
+      // If auto-login fails, still redirect but show warning
+      toast({
+        title: "⚠️ Registration Complete",
+        description: "Please log in manually",
+        variant: "default",
+        duration: 3000
+      });
+    }
+
     } catch (error) {
       toast({
         title: "Registration failed",
@@ -92,184 +117,112 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
     }
   }
 
-  // async function onSubmit(values: z.infer<typeof formSchema>) {
-  //   try {
-  //     const imageFile = values.image[0]; // First file
-  //     const formData = new FormData();
-  //     formData.append("image", imageFile);
-  //     formData.append("name", values.name);
-  //     formData.append("email", values.email);
-  //     formData.append("password", values.password);
-  
-  //     // Call your register function with image if applicable
-  //     await register(values.name, values.email, values.password, "user"); // use "user" or modify as needed
-  
-  //     toast({
-  //       title: "Account created",
-  //       description: "You have successfully registered an account.",
-  //     });
-  
-  //     const response = await fetch('/api/email');
-  //     const { isValide } = await response.json();
-  //     if (isValide) {
-  //       sendEmail('Teste', 'danniribeiro01@gmail.com', 'Este é o texto');
-  //     }
-  
-  //     router.push("/shop");
-  //   } catch (error) {
-  //     toast({
-  //       title: "Registration failed",
-  //       description: error instanceof Error ? error.message : "Please try again",
-  //       variant: "destructive",
-  //     });
-  //   }
-  // }
-  
-
   return (
     <div className={cn("grid gap-6", className)} {...props}>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Name Field */}
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="mb-1 block text-sm font-medium ">Full Name</FormLabel>
+                <FormLabel>Full Name</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="John Doe" 
-                    {...field} 
-                    disabled={isLoading}
-                  />
+                  <Input placeholder="John Doe" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {/* Email Field */}
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="mb-1 block text-sm font-medium ">Email</FormLabel>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input 
-                    placeholder="example@example.com" 
-                    {...field} 
-                    disabled={isLoading}
-                  />
+                  <Input placeholder="example@example.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {/* Password Field */}
           <FormField
             control={form.control}
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="mb-1 block text-sm font-medium ">Password</FormLabel>
+                <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="password" 
-                    placeholder="••••••••" 
-                    {...field}
-                    disabled={isLoading}
-                  />
+                  <Input type="password" placeholder="••••••••" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {/* Confirm Password Field */}
           <FormField
             control={form.control}
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="mb-1 block text-sm font-medium ">Confirm Password</FormLabel>
+                <FormLabel>Confirm Password</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="password" 
-                    placeholder="••••••••" 
-                    {...field}
-                    disabled={isLoading}
-                  />
+                  <Input type="password" placeholder="••••••••" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {/* Image Upload Field */}
           <FormField
             control={form.control}
             name="image"
-            render={({ field }) => {
-              const file = field.value?.[0];
-
-              return (
-                <FormItem>
-                  <FormLabel className="mb-1 block text-sm font-medium">
-                    Profile Image
-                  </FormLabel>
-                  <FormControl>
-                    <div
-                      className={cn(
-                        "relative group flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-xl p-4 transition-colors hover:border-gray-500",
-                        isLoading && "opacity-60 pointer-events-none"
-                      )}
-                    >
-                      {file ? (
-                        <div className="relative">
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt="Preview"
-                            className="h-24 w-24 object-cover rounded-full shadow-md"
-                          />
-                          <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                            <span className="text-white text-sm">Change</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center text-gray-500">
-                          <svg
-                            className="w-8 h-8 mb-1"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            viewBox="0 0 24 24"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                            />
-                          </svg>
-                          <span className="text-sm">Drag and drop or click to upload</span>
-                        </div>
-                      )}
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => field.onChange(e.target.files)}
-                        disabled={isLoading}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              );
-            }}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Profile Image (Optional)</FormLabel>
+                <FormControl>
+                  <div className="border border-dashed rounded-lg p-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => field.onChange(e.target.files?.[0])}
+                      className="block w-full text-sm text-gray-500
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-md file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-primary file:text-white
+                        hover:file:bg-primary-dark"
+                    />
+                    {field.value && (
+                      <div className="mt-2">
+                        <img 
+                          src={URL.createObjectURL(field.value)} 
+                          alt="Preview" 
+                          className="h-24 w-24 object-cover rounded-full"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-
-
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Creating account..." : "Create account"}
           </Button>
         </form>
       </Form>
+
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t" />
@@ -280,7 +233,8 @@ export default function RegisterForm({ className, ...props }: RegisterFormProps)
           </span>
         </div>
       </div>
-      <GoogleButton action="register"/>
+      
+      <GoogleButton action="register" />
     </div>
   )
 }

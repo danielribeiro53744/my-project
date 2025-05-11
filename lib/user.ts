@@ -8,7 +8,8 @@ export interface User {
   name: string;
   email: string;
   role: 'user' | 'admin';
-  cart?: CartItem;
+  cart?: CartItem[];
+  image?: string; // URL or base64 string for profile image
 }
 
 interface UserState {
