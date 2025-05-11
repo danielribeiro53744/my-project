@@ -7,12 +7,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/action/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/lib/auth"
+import { useAuth } from "@/lib/stores/auth"
 import {
   Form,
   FormControl,
@@ -22,17 +22,10 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import GoogleButton from "./googleButton"
-import { sendEmail } from "@/lib/mail"
+import { sendEmail } from "@/lib/action/mail"
 import { RedirectBasedOnRole} from "@/lib/redirect"
+import { formSchema } from "@/lib/schemas/loginForm"
 
-const formSchema = z.object({
-  email: z.string().email({
-    message: "Please enter a valid email address",
-  }),
-  password: z.string().min(8, {
-    message: "Password must be at least 8 characters long",
-  }),
-})
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 

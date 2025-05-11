@@ -7,9 +7,9 @@ import { usePathname } from "next/navigation"
 import { Moon, Sun, ShoppingCart, User, Menu, X, LogOut, User as UserIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
-import { cn } from "@/lib/utils"
-import { useCart } from "@/lib/cart"
-import { useAuth } from "@/lib/auth"
+import { cn } from "@/lib/action/utils"
+import { useCart } from "@/lib/stores/cart"
+import { useAuth } from "@/lib/stores/auth"
 import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,

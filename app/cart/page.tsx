@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, Trash2, ArrowLeft } from "lucide-react"
-import { useCart } from "@/lib/cart"
+import { useCart } from "@/lib/stores/cart"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"

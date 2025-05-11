@@ -1,4 +1,4 @@
-import { cartItemSchema } from "@/lib/definitions";
+import { cartItemSchema1 } from "@/lib/schemas/cartItem";
 import { db } from "@vercel/postgres";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -10,7 +10,7 @@ export async function POST(
     try {
       const client = await db.connect();
       const { userId } = params;
-      const item = cartItemSchema.parse(await req.json());
+      const item = cartItemSchema1.parse(await req.json());
       
       // Verify product exists (optional but recommended)
       const productExists = await client.sql`

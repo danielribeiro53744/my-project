@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 // import Stripe from 'stripe';
-import { CartItem } from '@/lib/cart';
-import { useOrderStore } from '@/lib/orders';
-import { useAuth } from '@/lib/auth';
+import { useOrderStore } from '@/lib/stores/order';
+import { useAuth } from '@/lib/stores/auth';
+import { CartItem } from '@/lib/interfaces/cart';
 
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 

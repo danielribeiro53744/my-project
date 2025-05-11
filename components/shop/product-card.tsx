@@ -6,9 +6,9 @@ import { ShoppingCart } from "lucide-react"
 import { Product } from "@/objects/products"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/action/utils"
 import { useToast } from "@/hooks/use-toast"
-import { useCart } from "@/lib/cart"
+import { useCart } from "@/lib/stores/cart"
 import Image from "next/image"
 
 interface ProductCardProps {

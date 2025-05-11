@@ -1,7 +1,7 @@
 // lib/redirect.ts
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { User } from './user';
+import { User } from './interfaces/user';
 
 export const RedirectBasedOnRole = (user: User | null) => {
   const router = useRouter();
