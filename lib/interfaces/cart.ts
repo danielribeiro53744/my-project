@@ -1,4 +1,4 @@
-import { Product } from "@/objects/products"
+import { Product } from "@/lib/interfaces/products"
 
 export interface CartItem {
   id?: string;

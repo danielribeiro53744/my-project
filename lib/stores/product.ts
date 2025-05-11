@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useAuth } from '@/lib/stores/auth';
-import { Product } from '@/objects/products';
+import { Product } from '@/lib/interfaces/products';
 
 interface ProductState {
   products: Product[];

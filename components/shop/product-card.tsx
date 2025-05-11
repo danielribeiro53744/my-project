@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { ShoppingCart } from "lucide-react"
-import { Product } from "@/objects/products"
+import { Product } from "@/lib/interfaces/products"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/action/utils"
@@ -99,11 +99,11 @@ export function ProductCard({ product }: ProductCardProps) {
         <div className="flex items-center gap-2">
           {product.discountPrice ? (
             <>
-              <span className="font-semibold">{product.discountPrice.toFixed(2)}€</span>
-              <span className="text-muted-foreground text-sm line-through">{product.price.toFixed(2)}€</span>
+              {/* <span className="font-semibold">{product.discountPrice.toFixed(2)}€</span> */}
+              {/* <span className="text-muted-foreground text-sm line-through">{product.price.toFixed(2)}€</span> */}
             </>
           ) : (
-            <span className="font-semibold">{product.price.toFixed(2)}€</span>
+            <span className="font-semibold">{product.price}€</span>
           )}
         </div>
       </div>

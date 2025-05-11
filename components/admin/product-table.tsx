@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useProductStore } from "@/lib/stores/product"
-import { Product } from "@/objects/products"
+import { Product } from "@/lib/interfaces/products"
 
 export default function ProductTable() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([])
