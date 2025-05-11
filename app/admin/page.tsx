@@ -24,11 +24,16 @@ import AdminOrdersPage from "./orders/page"
 import CustomerPage from "./customer/page"
 import { RedirectBasedOnRole } from "@/lib/redirect"
 import { useAuth } from "@/lib/stores/auth"
+import AdminBillingPage from "./billing/page"
+import { useSearchParams } from "next/navigation"
 
 
 export default function AdminDashboard() {
 
   const [selectedTab, setSelectedTab] = useState("overview")
+  const searchParams = useSearchParams()
+  const urlSelectedTab = searchParams.get('selectedTab') || 'overview'
+  
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { products, fetchAllProducts } = useProductStore()
   const { user, isLoading } = useAuth();
@@ -44,6 +49,20 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchAllProducts()
   }, [fetchAllProducts])
+
+  // Sync tab state with URL changes
+  useEffect(() => {
+    if (urlSelectedTab !== selectedTab) {
+      setSelectedTab(urlSelectedTab)
+    }
+  }, [urlSelectedTab])
+
+  // Handle tab changes
+  const handleTabChange = (value: string) => {
+    setSelectedTab(value)
+    // Update URL without page reload
+    window.history.pushState({}, '', `/admin?selectedTab=${value}`)
+  }
 
   const stats = [
     {
@@ -95,9 +114,9 @@ export default function AdminDashboard() {
           <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
         </div>
 
-        <Tabs 
-          defaultValue="overview" 
-          onValueChange={setSelectedTab} 
+         <Tabs 
+          value={selectedTab} // Controlled value
+          onValueChange={handleTabChange}
           className="space-y-4 sm:space-y-6"
         >
           <TabsList className="bg-muted w-full overflow-x-auto">
@@ -106,6 +125,7 @@ export default function AdminDashboard() {
               <TabsTrigger value="products" className="text-xs sm:text-sm px-3 py-1">Products</TabsTrigger>
               <TabsTrigger value="orders" className="text-xs sm:text-sm px-3 py-1">Orders</TabsTrigger>
               <TabsTrigger value="customers" className="text-xs sm:text-sm px-3 py-1">Customers</TabsTrigger>
+              <TabsTrigger value="billing" className="text-xs sm:text-sm px-3 py-1">Billing</TabsTrigger>
             </div>
           </TabsList>
 
@@ -183,6 +203,9 @@ export default function AdminDashboard() {
 
           <TabsContent value="customers">
             <CustomerPage />
+          </TabsContent>
+          <TabsContent value="billing">
+            <AdminBillingPage />
           </TabsContent>
         </Tabs>
       </div>
