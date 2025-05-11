@@ -4,7 +4,7 @@ import router from "next/router"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
-import { Moon, Sun, ShoppingCart, User, Menu, X, LogOut, User as UserIcon } from "lucide-react"
+import { Moon, Sun, ShoppingCart, User, Menu, X, LogOut, User as UserIcon, LayoutDashboard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/action/utils"
@@ -151,6 +151,14 @@ const Header = () => {
                     </Link>
                   </DropdownMenuItem>
                 )}
+                {user.role === "admin" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" onClick={() => setIsDropdownOpen(false)} className="w-full">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      My Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
@@ -216,6 +224,14 @@ const Header = () => {
                         </Button>
                       </Link>
                     )}
+                    {user.role === "admin" && (
+                      <Link href="/admin" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full mb-2">
+                          My Dashboard
+                        </Button>
+                      </Link>
+                    )}
+                    
                     <Button 
                       variant="destructive" 
                       className="w-full"

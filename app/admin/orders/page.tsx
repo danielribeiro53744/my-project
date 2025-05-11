@@ -1,9 +1,27 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAuth } from "@/lib/stores/auth"
+import { useToast } from "@/hooks/use-toast"
+import { Edit, MoreHorizontal, Plus, Trash } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
 import {
   Table,
   TableBody,
@@ -12,138 +30,233 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import Link from "next/link"
+import { Badge } from "@/components/ui/badge"
+import { useOrderStore } from "@/lib/stores/order"
 import { Order } from "@/lib/interfaces/order"
 
-export default function AdminOrdersPage() {
-  const { user } = useAuth()
-  const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState<string>("all")
+export default function OrderPage() {
+  const [selectedOrders, setSelectedOrders] = useState<string[]>([])
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [currentOrder, setCurrentOrder] = useState<Order | null>(null)
+  const { toast } = useToast()
+
+  const { orders, fetchOrders } = useOrderStore()
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch('/api/admin/orders')
-        const data = await response.json()
-        setOrders(data)
-      } catch (error) {
-        console.error('Failed to fetch orders:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchOrders()
-  }, [])
+  }, [fetchOrders])
 
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="container mx-auto px-4 pt-32 pb-16 text-center">
-        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-        <p className="text-muted-foreground mb-8">
-          You don't have permission to view this page.
-        </p>
-        <Button asChild>
-          <Link href="/">Return Home</Link>
-        </Button>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 pt-32 pb-16">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-muted rounded w-1/4"></div>
-          <div className="h-64 bg-muted rounded"></div>
-        </div>
-      </div>
-    )
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-500'
-      case 'pending':
-        return 'bg-yellow-500'
-      case 'cancelled':
-        return 'bg-red-500'
-      default:
-        return 'bg-gray-500'
+  const handleSelectAll = () => {
+    if (selectedOrders.length === orders.length) {
+      setSelectedOrders([])
+    } else {
+      setSelectedOrders(orders.map((order) => order.id))
     }
   }
 
-  const filteredOrders = statusFilter === "all" 
-    ? orders 
-    : orders.filter(order => order.status === statusFilter)
+  const handleSelectOrder = (orderId: string) => {
+    setSelectedOrders((prev) =>
+      prev.includes(orderId)
+        ? prev.filter((id) => id !== orderId)
+        : [...prev, orderId]
+    )
+  }
+
+  const handleDelete = (order: Order) => {
+    setCurrentOrder(order)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleEdit = (order: Order) => {
+    setCurrentOrder(order)
+    setIsEditDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    toast({
+      title: "Order deleted",
+      description: `${currentOrder?.id} has been removed.`,
+    })
+    setIsDeleteDialogOpen(false)
+  }
+
+  const confirmEdit = () => {
+    toast({
+      title: "Order updated",
+      description: `${currentOrder?.id} has been updated.`,
+    })
+    setIsEditDialogOpen(false)
+  }
 
   return (
-    <div className="container mx-auto px-4 pt-32 pb-16">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Order Management</h1>
-        <Select
-          value={statusFilter}
-          onValueChange={setStatusFilter}
-        >
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Orders</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">Orders</h2>
+        <Button size="sm">
+          <Plus className="h-4 w-4 mr-1" />
+          Add Order
+        </Button>
       </div>
 
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={selectedOrders.length === orders.length && orders.length > 0}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="Select all"
+                />
+              </TableHead>
               <TableHead>Order ID</TableHead>
               <TableHead>Customer</TableHead>
-              <TableHead>Date</TableHead>
               <TableHead>Total</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredOrders.map((order) => (
+            {orders.map((order) => (
               <TableRow key={order.id}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedOrders.includes(order.id)}
+                    onCheckedChange={() => handleSelectOrder(order.id)}
+                    aria-label={`Select ${order.id}`}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">{order.id}</TableCell>
-                <TableCell>{order.shippingAddress.name}</TableCell>
+                <TableCell>{order.userId}</TableCell>
+                <TableCell>${Number(order.total).toFixed(2)}</TableCell>
                 <TableCell>
-                  {new Date(order.createdAt).toLocaleDateString()}
+                  <div className="flex gap-1">
+                    {order.status === 'pending' && (
+                      <Badge variant="outline" className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-blue-500/20">
+                        Pending
+                      </Badge>
+                    )}
+                    {order.status === 'completed' && (
+                      <Badge variant="outline" className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">
+                        Completed
+                      </Badge>
+                    )}
+                    {order.status === 'cancelled' && (
+                      <Badge variant="outline" className="bg-red-500/10 text-red-500 hover:bg-red-500/20 border-red-500/20">
+                        Cancelled
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
-                <TableCell>${order.total.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(order.status)}>
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Button asChild variant="outline" size="sm">
-                    <Link href={`/admin/orders/${order.id}`}>
-                      View Details
-                    </Link>
-                  </Button>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleEdit(order)}>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDelete(order)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
-    </div>
+
+      {/* Delete Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Are you sure?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete order <span className="font-medium">{currentOrder?.id}</span>.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Order</DialogTitle>
+            <DialogDescription>
+              Make changes to the order information here.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="customer" className="text-sm font-medium">
+                Customer ID
+              </label>
+              <Input
+                id="customer"
+                defaultValue={currentOrder?.userId}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="total" className="text-sm font-medium">
+                Total
+              </label>
+              <Input
+                id="total"
+                defaultValue={currentOrder?.total}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="status" className="text-sm font-medium">
+                Status
+              </label>
+              <Input
+                id="status"
+                defaultValue={currentOrder?.status}
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="shippingAddress" className="text-sm font-medium">
+                Shipping Address
+              </label>
+              <div>
+                <div>Name: {currentOrder?.shippingAddress.name}</div>
+                <div>Address: {currentOrder?.shippingAddress.address}</div>
+                <div>City: {currentOrder?.shippingAddress.city}</div>
+                <div>Country: {currentOrder?.shippingAddress.country}</div>
+                <div>Postal Code: {currentOrder?.shippingAddress.postalCode}</div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={confirmEdit}>
+              Save changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

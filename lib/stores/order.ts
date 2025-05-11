@@ -3,14 +3,14 @@ import { persist } from 'zustand/middleware';
 import { useAuth } from '@/lib/stores/auth';
 import { Order } from '../interfaces/order';
 
-
-
 interface OrderState {
   orders: Order[];
+  order: Order | null;  // Add a separate state for a single order
   isLoading: boolean;
   error: string | null;
   fetchOrders: () => Promise<void>;
   fetchOrdersByUser: (userId: string) => Promise<void>;
+  fetchOrderById: (orderId: string) => Promise<void>;  // New method to fetch a specific order by ID
   createOrder: (order: Omit<Order, 'id' | 'createdAt'>) => Promise<void>;
   updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   deleteOrder: (orderId: string) => Promise<void>;
@@ -20,6 +20,7 @@ export const useOrderStore = create<OrderState>()(
   persist(
     (set) => ({
       orders: [],
+      order: null,  // Initialize the state for a single order
       isLoading: false,
       error: null,
 
@@ -28,8 +29,8 @@ export const useOrderStore = create<OrderState>()(
         try {
           const response = await fetch('/api/orders', {
             headers: {
-              'Authorization': `Bearer ${useAuth.getState().token}`
-            }
+              'Authorization': `Bearer ${useAuth.getState().token}`,
+            },
           });
 
           if (!response.ok) {
@@ -40,7 +41,8 @@ export const useOrderStore = create<OrderState>()(
           const orders = await response.json();
           set({ orders, isLoading: false });
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+          const errorMessage =
+            error instanceof Error ? error.message : 'An unknown error occurred';
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage);
         }
@@ -51,8 +53,8 @@ export const useOrderStore = create<OrderState>()(
         try {
           const response = await fetch(`/api/orders/user/${userId}`, {
             headers: {
-              'Authorization': `Bearer ${useAuth.getState().token}`
-            }
+              'Authorization': `Bearer ${useAuth.getState().token}`,
+            },
           });
 
           if (!response.ok) {
@@ -63,7 +65,32 @@ export const useOrderStore = create<OrderState>()(
           const userOrders = await response.json();
           set({ orders: userOrders, isLoading: false });
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+          const errorMessage =
+            error instanceof Error ? error.message : 'An unknown error occurred';
+          set({ error: errorMessage, isLoading: false });
+          throw new Error(errorMessage);
+        }
+      },
+
+      fetchOrderById: async (orderId) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await fetch(`/api/orders/${orderId}`, {
+            headers: {
+              'Authorization': `Bearer ${useAuth.getState().token}`,
+            },
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to fetch order');
+          }
+
+          const order = await response.json();
+          set({ order, isLoading: false });  // Store the fetched order in the 'order' state
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'An unknown error occurred';
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage);
         }
@@ -72,14 +99,13 @@ export const useOrderStore = create<OrderState>()(
       createOrder: async (orderData) => {
         set({ isLoading: true, error: null });
         try {
-          console.log('createeeee')
           const response = await fetch('/api/orders', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${useAuth.getState().token}`
+              'Authorization': `Bearer ${useAuth.getState().token}`,
             },
-            body: JSON.stringify(orderData)
+            body: JSON.stringify(orderData),
           });
 
           if (!response.ok) {
@@ -88,9 +114,13 @@ export const useOrderStore = create<OrderState>()(
           }
 
           const newOrder = await response.json();
-          set((state) => ({ orders: [...state.orders, newOrder], isLoading: false }));
+          set((state) => ({
+            orders: [...state.orders, newOrder],
+            isLoading: false,
+          }));
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+          const errorMessage =
+            error instanceof Error ? error.message : 'An unknown error occurred';
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage);
         }
@@ -99,14 +129,16 @@ export const useOrderStore = create<OrderState>()(
       updateOrderStatus: async (orderId, status) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/orders/${orderId}/status`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              // 'Authorization': `Bearer ${useAuth.getState().token}`
-            },
-            body: JSON.stringify({ status })
-          });
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_APP_URL}/api/orders/${orderId}/status`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ status }),
+            }
+          );
 
           if (!response.ok) {
             const error = await response.json();
@@ -115,11 +147,14 @@ export const useOrderStore = create<OrderState>()(
 
           const updatedOrder = await response.json();
           set((state) => ({
-            orders: state.orders.map((order) => order.id === orderId ? updatedOrder : order),
-            isLoading: false
+            orders: state.orders.map((order) =>
+              order.id === orderId ? updatedOrder : order
+            ),
+            isLoading: false,
           }));
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+          const errorMessage =
+            error instanceof Error ? error.message : 'An unknown error occurred';
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage);
         }
@@ -131,8 +166,8 @@ export const useOrderStore = create<OrderState>()(
           const response = await fetch(`/api/orders/${orderId}`, {
             method: 'DELETE',
             headers: {
-              'Authorization': `Bearer ${useAuth.getState().token}`
-            }
+              'Authorization': `Bearer ${useAuth.getState().token}`,
+            },
           });
 
           if (!response.ok) {
@@ -141,19 +176,19 @@ export const useOrderStore = create<OrderState>()(
           }
 
           set((state) => ({
-            orders: state.orders.filter(order => order.id !== orderId),
-            isLoading: false
+            orders: state.orders.filter((order) => order.id !== orderId),
+            isLoading: false,
           }));
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+          const errorMessage =
+            error instanceof Error ? error.message : 'An unknown error occurred';
           set({ error: errorMessage, isLoading: false });
           throw new Error(errorMessage);
         }
-      }
-
+      },
     }),
     {
-      name: 'order-storage'
+      name: 'order-storage',
     }
   )
 );
