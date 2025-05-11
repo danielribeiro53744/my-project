@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import React, { useEffect, useState } from "react";
 import emailjs from '@emailjs/browser';
 import { useTheme } from "next-themes"; // optional if you're using next-themes
+import { RedirectBasedOnRole } from '@/lib/redirect';
 
 declare global {
   interface Window {
@@ -19,12 +20,18 @@ interface GoogleButtonProps {
 }
 
 const GoogleButton = ({ action }: GoogleButtonProps) => {
-  const { register, login, isLoading } = useAuth();
+  const { user, register, login, isLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const googleButtonRef = React.useRef<HTMLDivElement>(null);
   const { theme } = useTheme(); // optional, based on your setup
-
+  if(user){
+    // Redirect based on role after login
+      const redirectPath = user.role === "admin" ? "/admin" : "/shop";
+      setTimeout(() => {
+        router.push(redirectPath);
+      }, 1500);
+  }
   useEffect(() => {
     const initializeGoogleButton = () => {
       if (!window.google || !googleButtonRef.current) return;
@@ -59,31 +66,56 @@ const GoogleButton = ({ action }: GoogleButtonProps) => {
     return JSON.parse(jsonPayload);
   };
 
-  const handleGoogleResponse = async (response: any) => {
-    const token = response.credential;
-    const payload = decodeJwtPayload(token);
-    const userData = {
-      name: payload.name || "",
-      email: payload.email || "",
-      password: 'GoogleOAuthUser123!',
-      confirmPassword: 'GoogleOAuthUser123!',
-    };
-
-    try {
-      if (action === 'login') {
-        await login(userData.email, userData.password)
-      } else {
-        await register(userData.name, userData.email, userData.password, 'user')
-      }
-      router.push("/shop")
-    } catch (error) {
+ const handleGoogleResponse = async (response: any) => {
+  const token = response.credential;
+  const payload = decodeJwtPayload(token);
+  
+  try {
+    if (action === 'login') {
+      // For login, we still use email/password
+      await login(payload.email, 'GoogleOAuthUser123!');
       toast({
-        title: "Registration failed",
-        description: error instanceof Error ? error.message : "Please try again",
-        variant: "destructive"
-      });
+        title: "Login successful",
+        description: "Redirecting you to your dashboard...",
+      })
+    } else {
+      // For registration, we'll create FormData
+      const formData = new FormData();
+      formData.append('name', payload.name || "");
+      formData.append('email', payload.email || "");
+      formData.append('password', 'GoogleOAuthUser123!');
+      // If Google provides a picture, we can fetch it and add to FormData
+      if (payload.picture) {
+        try {
+          formData.append('image', payload.picture);
+        } catch (error) {
+          console.error('Failed to fetch Google profile image:', error);
+          // Continue without image if there's an error
+        }
+      }
+      const user = await register(formData);
+      toast({
+        title: "Register successful",
+        description: "Redirecting you to your dashboard...",
+      })
+      // Redirect based on role after login
+      const redirectPath = user.role === "admin" ? "/admin" : "/shop";
+      setTimeout(() => {
+        router.push(redirectPath);
+      }, 1500);
+      // RedirectBasedOnRole(user);
     }
-  };
+    // RedirectBasedOnRole(user);
+
+    
+  } catch (error) {
+    toast({
+      title: action === 'login' ? "Login failed" : "Registration failed",
+      description: error instanceof Error ? error.message : "Please try again",
+      variant: "destructive"
+    });
+  }
+};
 
   return (
     <div className="w-full flex justify-center">

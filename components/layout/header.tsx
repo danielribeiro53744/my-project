@@ -17,10 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-// import { useSession, signOut } from "next-auth/react"
 import Image from "next/image"
-import { checkAuth } from '@/lib/useSession';
-
 
 const Header = () => {
   const { theme, setTheme } = useTheme()
@@ -29,44 +26,13 @@ const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
   const { items } = useCart()
-  const { isAuth } = useAuth()
-  const [authState, setAuthState] = useState<{
-    isAuthenticated: boolean;
-    user: null | { name: string; email: string, image?: string };
-    isLoading: boolean;
-  }>({
-    isAuthenticated: false,
-    user: null,
-    isLoading: true,
-  });
-  // const { data: session, status } = session()
-  // const { isAuthenticated, user } =  checkAuth();
-  // const { isAuthenticated, user, isLoading } = useSession();
+  const { user, logout } = useAuth()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  // console.log(isAuthenticated)
   const cartItemCount = items.reduce((total, item) => total + item.quantity, 0)
-
-
-
 
   useEffect(() => {
     setIsMounted(true)    
   }, [])
-  // console.log(authState.isAuthenticated)
-  useEffect(() => {
-    const verifyAuth = async () => {
-      const { isAuthenticated, user } = await checkAuth();
-      console.log('is:::',isAuthenticated)
-      setAuthState({
-        isAuthenticated,
-        user,
-        isLoading: false,
-      });
-    };
-
-    verifyAuth();
-
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,22 +51,10 @@ const Header = () => {
   ]
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
-  // const handleLogout = async () => {
-  //   // await signOut({ callbackUrl: "/" })
-  //   setIsDropdownOpen(false)
-  // }
+
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/auth/signout', {
-        method: 'POST',
-      });
-
-      if (response.ok) {
-        // Refresh the page to clear client-side state
-        router.reload();
-        // Optionally redirect to home/login page
-        // router.push('/login');
-      }
+      logout();
     } catch (error) {
       console.error('Sign out failed:', error);
     }
@@ -165,46 +119,52 @@ const Header = () => {
           </Link>
 
           {/* User Account Dropdown */}
-          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Account">
-                {authState.isAuthenticated && authState.user?.image ? (
-                  <Image
-                    src={authState.user.image}
-                    alt="User Profile"
-                    width={24}
-                    height={24}
-                    className="rounded-full"
-                  />
-                ) : (
-                  <UserIcon className="h-5 w-5" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {authState.isAuthenticated ? (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link href="/profile" className="w-full" onClick={() => setIsDropdownOpen(false)}>
-                      <UserIcon className="mr-2 h-4 w-4" />
-                      Profile
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </DropdownMenuItem>
-                </>
-              ) : (
+          {user ? (
+            <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Account">
+                  {user.image ? (
+                    <Image
+                      src={user.image}
+                      alt="User Profile"
+                      width={24}
+                      height={24}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <UserIcon className="h-5 w-5" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <Link href="/login" className="w-full" onClick={() => setIsDropdownOpen(false)}>
+                  <Link href="/profile" onClick={() => setIsDropdownOpen(false)} className="w-full">
                     <UserIcon className="mr-2 h-4 w-4" />
-                    Sign In
+                    Profile
                   </Link>
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {user.role === "user" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/orders" onClick={() => setIsDropdownOpen(false)} className="w-full">
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      My Orders
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link href="/login" aria-label="Login">
+              <Button variant="ghost" size="icon">
+                <UserIcon className="h-5 w-5" />
+              </Button>
+            </Link>
+          )}
+
 
           {/* Mobile Menu Button */}
           <Button
@@ -241,16 +201,21 @@ const Header = () => {
                   {item.name}
                 </Link>
               ))}
-     
-
               <div className="pt-2 border-t">
-                {authState.isAuthenticated ? (
+                {user ? (
                   <>
                     <Link href="/profile" onClick={() => setIsMenuOpen(false)}>
                       <Button variant="outline" className="w-full mb-2">
                         My Profile
                       </Button>
                     </Link>
+                    {user.role === "user" && (
+                      <Link href="/orders" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" className="w-full mb-2">
+                          My Orders
+                        </Button>
+                      </Link>
+                    )}
                     <Button 
                       variant="destructive" 
                       className="w-full"
