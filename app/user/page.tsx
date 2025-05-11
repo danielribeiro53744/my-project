@@ -1,5 +1,5 @@
+import { cartSchema } from "@/lib/schemas/cart";
 
-import { cartSchema } from '@/lib/definitions';
 
 
 export default async function User() {

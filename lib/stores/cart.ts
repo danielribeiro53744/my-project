@@ -1,12 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Product } from '@/objects/products'
-
-export interface CartItem {
-  product: Product
-  quantity: number
-  size: string
-}
+import { CartItem } from '../interfaces/cart'
 
 interface CartStore {
   items: CartItem[]

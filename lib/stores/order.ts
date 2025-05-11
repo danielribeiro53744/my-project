@@ -1,24 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useAuth } from '@/lib/auth';
-import { CartItem } from './cart';
+import { useAuth } from '@/lib/stores/auth';
+import { Order } from '../interfaces/order';
 
-export interface Order {
-  id: string;
-  userId: string;
-  items: CartItem[];
-  total: number;
-  status: 'pending' | 'completed' | 'cancelled';
-  shippingAddress: {
-    name: string;
-    address: string;
-    city: string;
-    country: string;
-    postalCode: string;
-  };
-  paymentIntentId?: string;  //stripe
-  createdAt: string;
-}
+
 
 interface OrderState {
   orders: Order[];

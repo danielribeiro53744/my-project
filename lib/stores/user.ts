@@ -1,16 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CartItem } from '../objects/cart';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/lib/stores/auth';
+import { User } from '../interfaces/user';
+import { CartItem } from '../interfaces/cart';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'user' | 'admin';
-  cart?: CartItem[];
-  image?: string; // URL or base64 string for profile image
-}
 
 interface UserState {
   currentUser: User | null;

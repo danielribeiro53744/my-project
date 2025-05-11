@@ -1,15 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CartItem } from './definitions';
+import { User } from '../interfaces/user';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'user' | 'admin';
-  cart?: CartItem[];
-  image?: string; // URL or base64 string for profile image
-}
+
 
 interface AuthState {
   user: User | null;
