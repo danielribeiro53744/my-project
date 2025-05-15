@@ -120,7 +120,7 @@ export default function CartPage() {
                       {item.product.category} • Size: {item.size}
                     </p>
                     <p className="font-medium mb-3">
-                      {(item.product.discountPrice || item.product.price).toFixed(2)}€
+                      {(item.product.discountPrice || item.product.price) }€
                     </p>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export default function CartPage() {
                         </Button>
                       </div>
                       <span className="font-medium">
-                        {((item.product.discountPrice || item.product.price) * item.quantity).toFixed(2)}€
+                        {((item.product.discountPrice || item.product.price) * item.quantity) }€
                       </span>
                     </div>
                   </div>
@@ -203,7 +203,7 @@ export default function CartPage() {
                     </td>
                     <td className="p-4">{item.size}</td>
                     <td className="p-4">
-                      {(item.product.discountPrice || item.product.price).toFixed(2)}€
+                      {(item.product.discountPrice || item.product.price) }€
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export default function CartPage() {
                       </div>
                     </td>
                     <td className="p-4 font-medium">
-                      {((item.product.discountPrice || item.product.price) * item.quantity).toFixed(2)}€
+                      {((item.product.discountPrice || item.product.price) * item.quantity) }€
                     </td>
                     <td className="p-4">
                       <Button
@@ -267,7 +267,7 @@ export default function CartPage() {
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span>{getTotal().toFixed(2)}€</span>
+                <span>{getTotal() }€</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Shipping</span>
@@ -276,7 +276,7 @@ export default function CartPage() {
               <div className="border-t pt-3">
                 <div className="flex justify-between font-medium">
                   <span>Total</span>
-                  <span>{getTotal().toFixed(2)}€</span>
+                  <span>{getTotal() }€</span>
                 </div>
               </div>
             </div>
