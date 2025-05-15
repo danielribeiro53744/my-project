@@ -107,11 +107,11 @@ export function ProductCard({ product, onSelectCompare, isSelected = false }: Pr
         <div className="flex items-center gap-2">
           {product.discountPrice ? (
             <>
-              <span className="font-semibold">{product.discountPrice.toFixed(2)}€</span>
-              <span className="text-muted-foreground text-sm line-through">{product.price.toFixed(2)}€</span>
+              <span className="font-semibold">{product.discountPrice }€</span>
+              <span className="text-muted-foreground text-sm line-through">{product.price }€</span>
             </>
           ) : (
-            <span className="font-semibold">{product.price.toFixed(2)}€</span>
+            <span className="font-semibold">{product.price}€</span>
           )}
         </div>
       </div>

@@ -7,20 +7,20 @@ export async function POST(req: Request) {
   try {
    
     const client = await db.connect();
-    const body = await req.json();
-    const validatedOrder = orderSchema.parse(body);
+    const order = await req.json();
+    // const validatedOrder = orderSchema.parse(body);
 
     const orderDTO = {
-      userId: validatedOrder.userId,
-      items: validatedOrder.items.map(item => ({
+      userId: order.userId,
+      items: order.items.map((item: { product: { id: any; }; quantity: any; size: any; }) => ({
         productId: item.product.id,
         quantity: item.quantity,
         size: item.size
       })),
-      total: validatedOrder.total,
-      status: validatedOrder.status,
-      shippingAddress: validatedOrder.shippingAddress,
-      paymentIntentId: validatedOrder.paymentIntentId ?? null,
+      total: order.total,
+      status: order.status,
+      shippingAddress: order.shippingAddress,
+      paymentIntentId: order.paymentIntentId ?? null,
     };
 
     const newOrder = {
