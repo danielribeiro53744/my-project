@@ -1,51 +1,29 @@
+import { OrderRepository } from '@/lib/repositorys/order';
 import { orderSchema } from '@/lib/schemas/order';
 import { db } from '@vercel/postgres';
 import { NextRequest, NextResponse } from 'next/server';
-
 // POST /api/orders
 export async function POST(req: Request) {
   try {
-   
-    const client = await db.connect();
     const order = await req.json();
-    // const validatedOrder = orderSchema.parse(body);
+    // const validatedOrder = orderSchema.parse(order);
 
-    const orderDTO = {
-      userId: order.userId,
-      items: order.items.map((item: { product: { id: any; }; quantity: any; size: any; }) => ({
-        productId: item.product.id,
-        quantity: item.quantity,
-        size: item.size
-      })),
-      total: order.total,
-      status: order.status,
-      shippingAddress: order.shippingAddress,
-      paymentIntentId: order.paymentIntentId ?? null,
-    };
+    // const orderDTO = {
+    //   userId: order.userId,
+    //   items: order.items.map((item: { product: { id: any; }; quantity: any; size: any; }) => ({
+    //     productId: item.product.id,
+    //     quantity: item.quantity,
+    //     size: item.size
+    //   })),
+    //   total: order.total,
+    //   status: order.status,
+    //   shippingAddress: order.shippingAddress,
+    //   paymentIntentId: order.paymentIntentId ?? null,
+    // };
 
-    const newOrder = {
-      // id: crypto.randomUUID(),
-      ...orderDTO,
-      // createdAt: new Date().toISOString()
-    };
-
-  //   await client.sql`
-  //   CREATE TABLE IF NOT EXISTS orders (
-  //     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  //     data JSONB
-  //   )
-  // `;
-
-      // Insert the order
-      const resp = await client.sql`
-      INSERT INTO orders (data)
-      VALUES (${JSON.stringify(newOrder)})
-      RETURNING id
-      `;
-    client.release();
-    const newOrderId = resp.rows[0].id;
+    const newOrderId = await OrderRepository.createOrder(order);
+    
     return NextResponse.json(newOrderId, { status: 201 });
-
   } catch (error) {
     // if (error instanceof z.ZodError) {
     //   return NextResponse.json({ error: error.errors }, { status: 400 });
@@ -54,24 +32,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
 // GET /api/admin/orders
-export async function GET(req: NextRequest) {
-
+export async function GET(req: Request) {
   try {
-    const client = await db.connect();
-    const result = await client.sql`SELECT id, data FROM orders ORDER BY data->>'createdAt' DESC`;
-    client.release();
-
-    const orders = result.rows.map(row => ({
-      id: row.id,
-      ...row.data,
-    }));
-
+    const orders = await OrderRepository.getAllOrders();
     return NextResponse.json(orders);
   } catch (error) {
     console.error("[ADMIN_ORDERS_GET]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" }, 
+      { status: 500 }
+    );
   }
 }
 

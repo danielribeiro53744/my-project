@@ -1,52 +1,31 @@
+import { OrderRepository } from '@/lib/repositorys/order';
 import { statusSchema } from '@/lib/schemas/status';
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-// PUT /api/orders/[orderId]/status
+
+// PUT /api/orders/[id]/status
 export async function PUT(
   req: Request,
   { params }: { params: { id: string } }
 ) {
-  const { id } = params;
-
   try {
-    const client = await db.connect();
     const body = await req.json();
-
     const { status } = statusSchema.parse(body);
 
-    // Fetch the existing order
-    const { rows } = await client.sql`
-      SELECT * FROM orders WHERE id = ${id} LIMIT 1
-    `;
-
-    if (rows.length === 0) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
-    }
-
-    const order = rows[0].data;
-
-    // Update the order's status
-    const updatedOrder = {
-      ...order,
-      status,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await client.sql`
-      UPDATE orders
-      SET data = ${JSON.stringify(updatedOrder)}
-      WHERE id = ${id}
-    `;
-
-    client.release();
+    const updatedOrder = await OrderRepository.updateOrderStatus(params.id, status);
 
     return NextResponse.json(updatedOrder, { status: 200 });
   } catch (error) {
     console.error('Error updating order status:', error);
+    
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
+    }
+
+    if (error instanceof Error && error.message === 'Order not found') {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     return NextResponse.json(
