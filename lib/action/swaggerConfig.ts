@@ -10,7 +10,7 @@ const options = {
       description: 'Auto-generated API documentation using Swagger',
     },
   },
-  apis: ['app/api/**/*.ts'], // Make sure this path is correct for your API routes
+  apis: ['./app/api/**/*.ts'], // Make sure this path is correct for your API routes
 };
 
 export const swaggerSpec = swaggerJSDoc(options);

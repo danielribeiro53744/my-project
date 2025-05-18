@@ -1,5 +1,7 @@
+import { OrderRepository } from '@/lib/repositorys/order';
 import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
+
 
 // GET /api/orders/[id]
 export async function GET(
@@ -7,26 +9,22 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const client = await db.connect();
-    const orderId = params.id;
+    const order = await OrderRepository.getOrderById(params.id);
 
-    const { rows } = await client.sql`
-      SELECT * FROM orders
-      WHERE id = ${orderId}
-      LIMIT 1
-    `;
-
-    client.release();
-
-    if (rows.length === 0) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    if (!order) {
+      return NextResponse.json(
+        { error: 'Order not found' }, 
+        { status: 404 }
+      );
     }
 
-    return NextResponse.json(rows[0].data, { status: 200 });
-
+    return NextResponse.json(order, { status: 200 });
   } catch (error) {
     console.error('Error fetching order:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' }, 
+      { status: 500 }
+    );
   }
 }
 
@@ -36,29 +34,28 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const client = await db.connect();
-    const orderId = params.id;
+    const deletedOrder = await OrderRepository.deleteOrder(params.id);
 
-    const { rows } = await client.sql`
-      DELETE FROM orders
-      WHERE id = ${orderId}
-      RETURNING data
-    `;
-
-    client.release();
-
-    if (rows.length === 0) {
-      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    if (!deletedOrder) {
+      return NextResponse.json(
+        { error: 'Order not found' }, 
+        { status: 404 }
+      );
     }
 
     return NextResponse.json(
-      { message: 'Order deleted', order: rows[0].data },
+      { 
+        message: 'Order deleted successfully',
+        order: deletedOrder 
+      },
       { status: 200 }
     );
-
   } catch (error) {
     console.error('Error deleting order:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal server error' }, 
+      { status: 500 }
+    );
   }
 }
 

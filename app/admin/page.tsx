@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from 'next/navigation';
 import { Building, Package, ShoppingBag, Users, Menu } from "lucide-react"
 import {
   Card,
@@ -29,6 +30,7 @@ import { useSearchParams } from "next/navigation"
 
 
 export default function AdminDashboard() {
+  const router = useRouter();
 
   const [selectedTab, setSelectedTab] = useState("overview")
   const searchParams = useSearchParams()
@@ -37,14 +39,7 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { products, fetchAllProducts } = useProductStore()
   const { user, isLoading } = useAuth();
-  if (typeof window !== "undefined") {
-    // Client-side-only code
-      if (user && user.role !== 'admin' && isLoading) {
-        window.location.href = '/shop';
-      } else if (!user && isLoading) {
-        window.location.href = '/login';
-      }
-  }
+
   // ✅ Fetch products on mount
   useEffect(() => {
     fetchAllProducts()
@@ -90,6 +85,13 @@ export default function AdminDashboard() {
       description: "23 new customers this week",
     },
   ]
+   useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      router.replace('/login'); // More seamless and doesn't push to history
+    }
+  }, [user, router]);
+
+  if (!user || user.role !== 'admin') return null; // Prevent flicker
   return (
     <div className="flex h-screen overflow-hidden pt-16">
       {/* Mobile Sidebar */}
