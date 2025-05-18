@@ -1,3 +1,4 @@
+import { UserRepository } from "@/lib/repositorys/user";
 import { userSchema } from "@/lib/schemas/user";
 import { db } from "@vercel/postgres";
 import { hash } from "bcryptjs";
@@ -6,87 +7,50 @@ import { z } from "zod";
 
 
 export async function POST(req: Request) {
-    try {
-      const client = await db.connect();
-      const body = await req.json();
-      const validatedData = userSchema.parse(body);
-      
-      // Check if user exists
-      const { rows } = await client.sql`
-        SELECT * FROM users 
-        WHERE data->>'email' = ${validatedData.email}
-        LIMIT 1
-      `;
-      
-      if (rows.length > 0) {
-        return NextResponse.json(
-          { error: 'User already exists' },
-          { status: 409 }
-        );
-      }
-      
-      // Hash password
-      const hashedPassword = await hash(validatedData.password, 12);
-      
-      // Create new user with empty cart if not provided
-      const newUser = {
-        id: crypto.randomUUID(),
-        name: validatedData.name,
-        email: validatedData.email,
-        password: hashedPassword,
-        role: validatedData.role,
-        cart: validatedData.cart || [], // Ensure cart exists
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Save to database
-      await client.sql`
-        INSERT INTO users (data)
-        VALUES (${JSON.stringify(newUser)})
-      `;
-      
-      client.release();
-      
-      // Return user without password
-      const { password, ...userWithoutPassword } = newUser;
-      return NextResponse.json(userWithoutPassword);
-      
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return NextResponse.json(
-          { error: error.errors },
-          { status: 400 }
-        );
-      }
-      
-      console.error('Error creating user:', error);
+  try {
+    const body = await req.json();
+    const validatedData = userSchema.parse(body);
+    
+    // Check if user exists
+    const existingUser = await UserRepository.findByEmail(validatedData.email);
+    if (existingUser) {
       return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
+        { error: 'User already exists' },
+        { status: 409 }
       );
     }
-  }
-
-  export async function GET() {
-  try {
-    const client = await db.connect();
     
-    // Fetch all users
-    const { rows } = await client.sql`
-      SELECT data FROM users
-    `;
-    
-    client.release();
-    
-    // Remove passwords from response
-    const usersWithoutPasswords = rows.map(row => {
-      const { password, ...userData } = row.data;
-      return userData;
+    // Create new user
+    const newUser = await UserRepository.createUser({
+      name: validatedData.name,
+      email: validatedData.email,
+      password: validatedData.password,
+      role: validatedData.role,
+      cart: validatedData.cart
     });
     
-    return NextResponse.json(usersWithoutPasswords);
+    return NextResponse.json(newUser);
     
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors },
+        { status: 400 }
+      );
+    }
+    
+    console.error('Error creating user:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    const users = await UserRepository.getAllUsers();
+    return NextResponse.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(

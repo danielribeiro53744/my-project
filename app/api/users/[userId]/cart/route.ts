@@ -1,147 +1,98 @@
+import { User } from "@/lib/interfaces/user";
+import { UserRepository } from "@/lib/repositorys/user";
 import { cartItemSchema1 } from "@/lib/schemas/cartItem";
 import { db } from "@vercel/postgres";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-export async function POST(
-    req: Request,
-    { params }: { params: { userId: string } }
-  ) {
-    try {
-      const client = await db.connect();
-      const { userId } = params;
-      const item = cartItemSchema1.parse(await req.json());
-      
-      // Verify product exists (optional but recommended)
-      const productExists = await client.sql`
-        SELECT * FROM products 
-        WHERE id = ${item.id}
-      `;
-      
-      if (productExists.rows.length === 0) {
-        client.release();
-        return NextResponse.json(
-          { error: 'Product not found' },
-          { status: 404 }
-        );
-      }
-      
-      // Get existing user
-      const userResult = await client.sql`
-        SELECT data FROM users
-        WHERE data->>'id' = ${userId}
-        LIMIT 1
-      `;
-      
-      if (userResult.rows.length === 0) {
-        client.release();
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
-      }
-      
-      const user = userResult.rows[0].data;
-      const currentCart = user.cart || [];
-      
-      // Check if same product with same size already exists in cart
-      const existingItemIndex = currentCart.findIndex(
-        (i: any) => i.product.id === item.id && i.size === item
-      );
-      
-      let updatedCart;
-      if (existingItemIndex >= 0) {
-        // Update quantity if same product/size exists
-        updatedCart = [...currentCart];
-        updatedCart[existingItemIndex].quantity += item.quantity;
-      } else {
-        // Add new item
-        updatedCart = [...currentCart, item];
-      }
-      
-      // Update user with new cart
-      const updatedUser = {
-        ...user,
-        cart: updatedCart,
-        updatedAt: new Date().toISOString()
-      };
-      
-      await client.sql`
-        UPDATE users
-        SET data = ${JSON.stringify(updatedUser)}
-        WHERE data->>'id' = ${userId}
-      `;
-      
-      client.release();
-      
-      return NextResponse.json(updatedCart);
-      
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return NextResponse.json(
-          { error: error.errors },
-          { status: 400 }
-        );
-      }
-      
-      console.error('Error adding to cart:', error);
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
-    }
-  }
 
-  export async function DELETE(
-    req: Request,
-    { params }: { params: { userId: string } }
-  ) {
-    try {
-      const client = await db.connect();
-      const { userId } = params;
-      
-      // Get existing user
-      const { rows } = await client.sql`
-        SELECT data FROM users
-        WHERE data->>'id' = ${userId}
-        LIMIT 1
-      `;
-      
-      if (rows.length === 0) {
-        client.release();
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
-      }
-      
-      const user = rows[0].data;
-      
-      // Update user with empty cart
-      const updatedUser = {
-        ...user,
-        cart: [],
-        updatedAt: new Date().toISOString()
-      };
-      
-      await client.sql`
-        UPDATE users
-        SET data = ${JSON.stringify(updatedUser)}
-        WHERE data->>'id' = ${userId}
-      `;
-      
-      client.release();
-      
-      return NextResponse.json({ success: true });
-      
-    } catch (error) {
-      console.error('Error clearing cart:', error);
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
+export async function POST(
+  req: Request,
+  { params }: { params: { userId: string } }
+) {
+  try {
+    const { userId } = params;
+    const item = cartItemSchema1.parse(await req.json());
+
+    // Check product existence
+    const productExists = await UserRepository.checkProductExists(item.id);
+    if (!productExists) {
+      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
+
+    // Fetch user and client
+    const { user, client } = await UserRepository.getUserById(userId);
+    if (!user) {
+      client.release();
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const currentCart = user.cart || [];
+
+    const existingItemIndex = currentCart.findIndex(
+      (i: any) => i.product.id === item.id
+    );
+
+    let updatedCart;
+    if (existingItemIndex >= 0) {
+      updatedCart = [...currentCart];
+      updatedCart[existingItemIndex].quantity += item.quantity;
+    } else {
+      updatedCart = [...currentCart, item];
+    }
+
+    const updatedUser = {
+      ...user,
+      cart: updatedCart,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await UserRepository.updatedCart(client, userId, updatedUser as User);
+    client.release();
+
+    return NextResponse.json(updatedCart);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: error.errors }, { status: 400 });
+    }
+
+    console.error('Error adding to cart:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+}
+
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: { userId: string } }
+) {
+  try {
+    const { userId } = params;
+
+    // Get user and DB client
+    const { user, client } = await UserRepository.getUserById(userId);
+
+    if (!user) {
+      client.release();
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Clear cart
+    const updatedUser = {
+      ...user,
+      cart: [],
+      updatedAt: new Date().toISOString()
+    };
+
+    await UserRepository.updatedCart(client, userId, updatedUser);
+    client.release();
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error clearing cart:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
 
   /**
  * @swagger

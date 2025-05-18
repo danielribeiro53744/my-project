@@ -1,131 +1,83 @@
+import { UserRepository } from "@/lib/repositorys/user";
 import { userSchema } from "@/lib/schemas/user";
 import { db } from "@vercel/postgres";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-  
-export async function GET(
-    req: Request,
-    { params }: { params: { userId: string } }
-  ) {
-    try {
-      const client = await db.connect();
-      const { userId } = params;
-      
-      const { rows } = await client.sql`
-        SELECT data FROM users
-        WHERE data->>'id' = ${userId}
-        LIMIT 1
-      `;
-      
-      client.release();
-      
-      if (rows.length === 0) {
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
-      }
-      
-      const user = rows[0].data;
-      
-      // Ensure cart exists and has complete product data
-      const cartWithProducts = await Promise.all(
-        (user.cart || []).map(async (item: any) => {
-          // In case you need to fetch fresh product data
-          const productRes = await client.sql`
-            SELECT * FROM products WHERE id = ${item.product.id}
-          `;
-          return {
-            ...item,
-            product: productRes.rows[0] || item.product // Fallback to stored data
-          };
-        })
-      );
-      
-      const userWithCart = {
-        ...user,
-        cart: cartWithProducts
-      };
-      
-      // Remove sensitive data
-      const { password, ...safeUser } = userWithCart;
-      return NextResponse.json(safeUser);
-      
-    } catch (error) {
-      console.error('Error fetching user:', error);
+  export async function GET(
+  request: Request,
+  { params }: { params: { userId: string } }
+) {
+  try {
+    // Validate userId format if needed
+    const userId = z.string().uuid().parse(params.userId);
+
+    const user = await UserRepository.getUserWithCart(userId);
+    
+    if (!user) {
       return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
+        { error: 'User not found' },
+        { status: 404 }
       );
     }
-  }
-  export async function PUT(
-    req: Request,
-    { params }: { params: { userId: string } }
-  ) {
-    try {
-      const client = await db.connect();
-      const { userId } = params;
-      const body = await req.json();
-      
-      // Validate input (excluding password)
-      const updateSchema = userSchema.omit({ password: true }).partial();
-      const validatedData = updateSchema.parse(body);
-      
-      // Get existing user
-      const { rows } = await client.sql`
-        SELECT data FROM users
-        WHERE data->>'id' = ${userId}
-        LIMIT 1
-      `;
-      
-      if (rows.length === 0) {
-        client.release();
-        return NextResponse.json(
-          { error: 'User not found' },
-          { status: 404 }
-        );
-      }
-      
-      const existingUser = rows[0].data;
-      
-      // Merge updates (preserve existing cart if not provided)
-      const updatedUser = {
-        ...existingUser,
-        ...validatedData,
-        cart: validatedData.cart ?? existingUser.cart ?? [], // Keep existing cart if not provided
-        updatedAt: new Date().toISOString()
-      };
-      
-      // Update in database
-      await client.sql`
-        UPDATE users
-        SET data = ${JSON.stringify(updatedUser)}
-        WHERE data->>'id' = ${userId}
-      `;
-      
-      client.release();
-      
-      // Return updated user without password
-      const { password, ...safeUser } = updatedUser;
-      return NextResponse.json(safeUser);
-      
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return NextResponse.json(
-          { error: error.errors },
-          { status: 400 }
-        );
-      }
-      
-      console.error('Error updating user:', error);
+    
+    return NextResponse.json(user);
+    
+  } catch (error) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
+        { error: 'Invalid user ID format' },
+        { status: 400 }
       );
     }
+    
+    console.error('Error fetching user:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
+}
+
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { userId: string } }
+) {
+  try {
+    // Validate inputs
+    const userId = z.string().uuid().parse(params.userId);
+    const body = await request.json();
+    // const validatedData = updateUserSchema.parse(body);
+
+    // Perform update
+    const updatedUser = await UserRepository.updateUser(userId, body);
+    
+    if (!updatedUser) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(updatedUser);
+    
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors },
+        { status: 400 }
+      );
+    }
+    
+    console.error('Error updating user:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
   /**
  * @swagger
  * /api/users/{userId}:

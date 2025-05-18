@@ -1,3 +1,4 @@
+import { ProductRepository } from "@/lib/repositorys/product";
 import { db } from "@vercel/postgres";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -22,14 +23,13 @@ const productSchema = z.object({
   isNewArrival: z.boolean().optional()
 });
 
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const client = await db.connect();
-
+    
     // Handle different query parameters
     const id = searchParams.get('id');
-    console.log(id, 'id')
     const category = searchParams.get('category');
     const gender = searchParams.get('gender');
     const featured = searchParams.get('featured');
@@ -38,58 +38,28 @@ export async function GET(request: Request) {
     const search = searchParams.get('search');
 
     if (id) {
-      // Get single product by ID
-      const { rows } = await client.sql`
-        SELECT * FROM Products WHERE id = ${id} LIMIT 1
-      `;
-      client.release();
+      const product = await ProductRepository.getProductById(id);
       
-      if (rows.length === 0) {
+      if (!product) {
         return NextResponse.json(
           { error: 'Product not found' },
           { status: 404 }
         );
       }
       
-      return NextResponse.json(rows[0]);
+      return NextResponse.json(product);
     }
 
-    let query = 'SELECT * FROM Products WHERE 1=1';
-    const params = [];
-
-    if (category) {
-      query += ' AND category = $1';
-      params.push(category);
-    }
-
-    if (gender) {
-      query += ' AND (gender = $' + (params.length + 1) + ' OR gender = \'unisex\')';
-      params.push(gender);
-    }
-
-    if (featured === 'true') {
-      query += ' AND featured = true';
-    }
-
-    if (newArrivals === 'true') {
-      query += ' AND is_new_arrival = true';
-    }
-
-    if (bestSellers === 'true') {
-      query += ' AND is_best_seller = true';
-    }
-
-    if (search) {
-      query += ' AND (LOWER(name) LIKE $' + (params.length + 1) + 
-               ' OR LOWER(description) LIKE $' + (params.length + 1) + 
-               ' OR LOWER(category) LIKE $' + (params.length + 1) + ')';
-      params.push(`%${search.toLowerCase()}%`);
-    }
-
-    const { rows } = await client.query(query, params);
-    client.release();
+    const products = await ProductRepository.getProducts({
+      category: category || undefined,
+      gender: gender || undefined,
+      featured: featured === 'true',
+      newArrivals: newArrivals === 'true',
+      bestSellers: bestSellers === 'true',
+      search: search || undefined
+    });
     
-    return NextResponse.json(rows);
+    return NextResponse.json(products);
     
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -102,45 +72,10 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const client = await db.connect();
     const body = await request.json();
-    const validatedData = productSchema.parse(body);
+    // const validatedData = productSchema.parse(body);
 
-    // Generate ID if not provided
-    const productId = validatedData.id || crypto.randomUUID();
-
-    const newProduct = {
-      ...validatedData,
-      id: productId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    await client.sql`
-      INSERT INTO Products (
-        id, name, description, price, discount_price, category, gender,
-        sizes, colors, images, featured, is_best_seller, is_new_arrival,
-        created_at, updated_at
-      ) VALUES (
-        ${newProduct.id},
-        ${newProduct.name},
-        ${newProduct.description},
-        ${newProduct.price},
-        ${newProduct.discountPrice || null},
-        ${newProduct.category},
-        ${newProduct.gender},
-        ${JSON.stringify(newProduct.sizes)},
-        ${JSON.stringify(newProduct.colors)},
-        ${JSON.stringify(newProduct.images)},
-        ${newProduct.featured || false},
-        ${newProduct.isBestSeller || false},
-        ${newProduct.isNewArrival || false},
-        ${newProduct.created_at},
-        ${newProduct.updated_at}
-      )
-    `;
-
-    client.release();
+    const newProduct = await ProductRepository.createProduct(body);
     
     return NextResponse.json(newProduct, { status: 201 });
     
@@ -162,54 +97,24 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const client = await db.connect();
     const body = await request.json();
-    const validatedData = productSchema.parse(body);
+    // const validatedData = productSchema.parse(body);
 
-    if (!validatedData.id) {
-      return NextResponse.json(
-        { error: 'Product ID is required for update' },
-        { status: 400 }
-      );
-    }
+    // if (!validatedData.id) {
+    //   return NextResponse.json(
+    //     { error: 'Product ID is required for update' },
+    //     { status: 400 }
+    //   );
+    // }
 
-    // Check if product exists
-    const { rows } = await client.sql`
-      SELECT * FROM Products WHERE id = ${validatedData.id} LIMIT 1
-    `;
+    const updatedProduct = await ProductRepository.updateProduct(body);
     
-    if (rows.length === 0) {
-      client.release();
+    if (!updatedProduct) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       );
     }
-
-    const updatedProduct = {
-      ...validatedData,
-      updated_at: new Date().toISOString()
-    };
-
-    await client.sql`
-      UPDATE Products SET
-        name = ${updatedProduct.name},
-        description = ${updatedProduct.description},
-        price = ${updatedProduct.price},
-        discount_price = ${updatedProduct.discountPrice || null},
-        category = ${updatedProduct.category},
-        gender = ${updatedProduct.gender},
-        sizes = ${JSON.stringify(updatedProduct.sizes)},
-        colors = ${JSON.stringify(updatedProduct.colors)},
-        images = ${JSON.stringify(updatedProduct.images)},
-        featured = ${updatedProduct.featured || false},
-        is_best_seller = ${updatedProduct.isBestSeller || false},
-        is_new_arrival = ${updatedProduct.isNewArrival || false},
-        updated_at = ${updatedProduct.updated_at}
-      WHERE id = ${updatedProduct.id}
-    `;
-
-    client.release();
     
     return NextResponse.json(updatedProduct);
     
@@ -228,7 +133,6 @@ export async function PUT(request: Request) {
     );
   }
 }
-
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -241,29 +145,17 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const client = await db.connect();
-
-    // Check if product exists
-    const { rows } = await client.sql`
-      SELECT * FROM Products WHERE id = ${id} LIMIT 1
-    `;
+    const result = await ProductRepository.deleteProduct(id);
     
-    if (rows.length === 0) {
-      client.release();
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Product not found' },
+        { error: result.message || 'Failed to delete product' },
         { status: 404 }
       );
     }
-
-    await client.sql`
-      DELETE FROM Products WHERE id = ${id}
-    `;
-
-    client.release();
     
     return NextResponse.json(
-      { message: 'Product deleted successfully' },
+      { message: result.message },
       { status: 200 }
     );
     

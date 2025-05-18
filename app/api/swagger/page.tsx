@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/stores/auth';
 import SwaggerUI from 'swagger-ui-react';
 import 'swagger-ui-react/swagger-ui.css';
@@ -7,17 +8,22 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { MoonIcon, SunIcon, DashboardIcon } from '@radix-ui/react-icons';
 
+
+
 export default function SwaggerPage() {
+  const router = useRouter();
+  
   const { user, isLoading } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
-  if (typeof window !== "undefined") {
-    // Client-side-only code
-      if (user && user.role !== 'admin' && isLoading) {
-        window.location.href = '/shop';
-      } else if (!user && isLoading) {
-        window.location.href = '/login';
-      }
-  }
+
+  // if (typeof window !== "undefined") {
+  //   // Client-side-only code
+  //     if (user && user.role !== 'admin' && isLoading) {
+  //       window.location.href = '/shop';
+  //     } else if (!user && isLoading) {
+  //       window.location.href = '/login';
+  //     }
+  // }
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -69,9 +75,13 @@ export default function SwaggerPage() {
     }
   }, [darkMode]);
 
-  if (!user || user.role !== 'admin') {
-    return null;
-  }
+  useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      router.replace('/login'); // More seamless and doesn't push to history
+    }
+  }, [user, router]);
+
+  if (!user || user.role !== 'admin') return null; // Prevent flicker
 
   return (
     <div style={{ height: '100vh', position: 'relative' }}>
