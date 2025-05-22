@@ -1,103 +1,47 @@
+// app/api/register/route.ts
 import { NextResponse } from 'next/server';
-import { hash } from 'bcryptjs';
-import { z } from 'zod';
-import { db } from '@vercel/postgres';
+import { UserRepository } from '@/lib/repositorys/user';
 import { formDataUserSchema } from '@/lib/schemas/userDataForm';
-
-
-// Schema for FormData requests (image is File instead of URL)
+import { z } from 'zod';
+import { User } from 'lucide-react';
 
 export async function POST(req: Request) {
   try {
-    const client = await db.connect();
-    // const contentType = req.headers.get('content-type');
+    const formData = await req.formData();
 
-    let validatedData;
-    let imageUrl: string | null = null;
+    const formDataValues = {
+      name: formData.get('name') as string,
+      email: formData.get('email') as string,
+      password: formData.get('password') as string,
+      image: formData.get('image') as string | null
+    };
 
-    // Handle FormData (for file uploads)
-    // if (contentType?.includes('multipart/form-data')) {
-      const formData = await req.formData();
-      // const formDataObj = Object.fromEntries(formData.entries());
-      // Convert FormData to structured object
-      const formDataValues = {
-        name: formData.get('name') as string,
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
-        image: formData.get('image') as string | null
-      };
-      validatedData = formDataUserSchema.parse(formDataValues);
-      // Handle image upload if provided
-      if (validatedData.image) {
-        imageUrl = validatedData.image;
-      }
-    // } 
-    // // Handle JSON data
-    // else {
-    //   const body = await req.json();
-    //   validatedData = jsonUserSchema.parse(body);
-    //   imageUrl = validatedData.image || null;
-    // }
+    const validatedData = formDataUserSchema.parse(formDataValues);
 
-    // Check if user already exists
-    const { rows } = await client.sql`
-      SELECT * FROM users 
-      WHERE data->>'email' = ${validatedData.email}
-      LIMIT 1
-    `;
-    
-    if (rows.length > 0) {
+    // Verifica se o usuário já existe
+    const existingUser = await UserRepository.findByEmail(validatedData.email);
+    if (existingUser) {
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 409 }
       );
     }
-    
-    // Hash password
-    const hashedPassword = await hash(validatedData.password, 12);
-    
-    // Check for admin email
-    const role = validatedData.email === 'teste@gmail.com' ? 'admin' : 'user';
-    
-    // Create new user
-    const newUser = {
-      id: crypto.randomUUID(),
+
+    const createdUser = await UserRepository.createUser({
       name: validatedData.name,
       email: validatedData.email,
-      password: hashedPassword,
-      role,
-      image: imageUrl,
-      createdAt: new Date().toISOString()
-    };
-    
-    // Save to database
-    try {
-      await client.sql`
-        INSERT INTO users (data)
-        VALUES (${JSON.stringify(newUser)})
-      `;
-    } catch (error) {
-      console.error('Postgres error:', error);
-      return NextResponse.json(
-        { error: 'Failed to save user' },
-        { status: 500 }
-      );
-    } finally {
-      client.release();
-    }
-    
-    // Return success without password
-    const { password, ...userWithoutPassword } = newUser;
-    return NextResponse.json(userWithoutPassword);
-    
+      password: validatedData.password,
+      role:"user",
+      cart: []
+    });
+
+    return NextResponse.json(createdUser);
+
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: error.errors },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: error.errors }, { status: 400 });
     }
-    
+
     console.error('Registration error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Internal server error' },
@@ -105,8 +49,6 @@ export async function POST(req: Request) {
     );
   }
 }
-
-
 
 /**
  * @swagger
