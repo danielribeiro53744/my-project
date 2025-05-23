@@ -56,18 +56,23 @@ export default function LoginForm({ className, ...props }: LoginFormProps) {
       })
 
       const data = await res.json()
-
       if (data.cart) {
+        const currentItems = [...items]; // Carrinho local atual
+      
         data.cart.forEach((item: any) => {
-          addItem(item.product, item.size, item.quantity)
-        })
-        localStorage.setItem("cart", JSON.stringify(data.cart))
+          const alreadyExists = currentItems.some(
+            (i) =>
+              i.product.id === item.product.id &&
+              i.size === item.size
+          );
+      
+          if (!alreadyExists) {
+            addItem(item.product, item.size, item.quantity);
+          }
+        });
+      
+        localStorage.setItem("cart", JSON.stringify(data.cart));
       }
-
-      toast({
-        title: "Login successful",
-        description: "Redirecting you to your dashboard...",
-      })
 
       const redirectPath = loggedInUser.role === "admin" ? "/admin" : "/shop"
       setTimeout(() => {

@@ -1,6 +1,6 @@
 "use client"
 
-import  User  from '@/app/user/page'
+//import  User  from '@/app/user/page'
 import  Admin  from '@/app/admin/page'
 import { redirect } from 'next/navigation';
 

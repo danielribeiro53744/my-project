@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import Image from "next/image"
+import { useAuth } from '@/lib/stores/auth';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCart()
   const { toast } = useToast()
   const router = useRouter()
-
+  const { user } = useAuth();
+  
   const handleQuantityChange = (
     productId: string,
     size: string,
@@ -25,6 +27,16 @@ export default function CartPage() {
   }
 
   const handleCheckout = async () => {
+    if (!user) {
+      toast({
+        title: "Login required",
+        description: "Please login or register to proceed to checkout.",
+        variant: "destructive",
+      });
+      router.push('/login'); // redireciona para login
+      return;
+    }
+  
     try {
       const shippingAddress = {
         name: "Jane Doe",
