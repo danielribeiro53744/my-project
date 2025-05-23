@@ -6,7 +6,9 @@ export interface User {
   name: string;
   email: string;
   role: 'user' | 'admin';
-  cart?: CartItem[];
-  image?: string; // URL or base64 string for profile image
-  address?: string;
+  image?: string | null;
+  cart?: any[];
+  createdAt: string;
+  updatedAt: string;
+  password?: string; // Adicionado para suportar autenticação
 }

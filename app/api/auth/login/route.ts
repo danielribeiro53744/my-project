@@ -2,16 +2,11 @@ import { NextResponse } from 'next/server';
 import { compare } from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { z } from 'zod';
-import { db } from '@vercel/postgres';
 import { formSchema } from '@/lib/schemas/loginForm';
+import { UserRepository } from '@/lib/repositorys/user';
 
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
 
-// === JWT Secret ===
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'your-secret-key'
-);
-
-// === JWT Sign Function ===
 async function generateJWT(user: { id: string, email: string, role: string }) {
   return await new SignJWT(user)
     .setProtectedHeader({ alg: 'HS256' })
@@ -19,27 +14,22 @@ async function generateJWT(user: { id: string, email: string, role: string }) {
     .sign(JWT_SECRET);
 }
 
-// === POST /api/auth/login ===
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const validatedData = formSchema.parse(body);
 
-    const client = await db.connect();
-
-    const { rows } = await client.sql`
-      SELECT * FROM users 
-      WHERE data->>'email' = ${validatedData.email}
-      LIMIT 1
-    `;
-
-    if (rows.length === 0) {
+    const user = await UserRepository.findByEmail(validatedData.email);
+    if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const user = rows[0].data;
+    if (!user.password) {
+      return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+    }
 
     const isPasswordValid = await compare(validatedData.password, user.password);
+    
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
@@ -58,21 +48,21 @@ export async function POST(req: Request) {
         name: userWithoutPassword.name,
         email: userWithoutPassword.email,
         role: userWithoutPassword.role,
-        image: userWithoutPassword.image || null, // Include image URL
+        image: userWithoutPassword.image || null,
       },
-      token, // JWT token for API clients (optional)
+      token,
     });
 
-    // Set Secure Cookie
     response.cookies.set('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       path: '/',
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 60 * 24, // 1 dia
     });
 
     return response;
+
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors }, { status: 400 });
@@ -82,7 +72,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-
 /**
  * @swagger
  * tags:
