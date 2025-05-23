@@ -180,5 +180,18 @@ export const UserRepository = {
       SET data = ${JSON.stringify(updatedUser)}
       WHERE data->>'id' = ${userId}
     `;
+  },
+  async findById(userId: string): Promise<User | null> {
+    const client = await db.connect();
+    try {
+      const result = await client.sql`
+        SELECT data FROM users
+        WHERE data->>'id' = ${userId}
+        LIMIT 1
+      `;
+      return result.rows.length > 0 ? result.rows[0].data : null;
+    } finally {
+      client.release();
+    }
   }
 };

@@ -29,7 +29,6 @@ export async function POST(req: Request) {
     }
 
     const isPasswordValid = await compare(validatedData.password, user.password);
-    
     if (!isPasswordValid) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
@@ -44,10 +43,8 @@ export async function POST(req: Request) {
 
     const response = NextResponse.json({
       user: {
-        id: userWithoutPassword.id,
-        name: userWithoutPassword.name,
-        email: userWithoutPassword.email,
-        role: userWithoutPassword.role,
+        ...userWithoutPassword,
+        cart: user.cart || [],  // Aqui adiciona o carrinho!
         image: userWithoutPassword.image || null,
       },
       token,

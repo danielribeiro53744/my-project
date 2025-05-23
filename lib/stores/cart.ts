@@ -5,7 +5,7 @@ import { CartItem } from '../interfaces/cart'
 
 interface CartStore {
   items: CartItem[]
-  addItem: (product: Product, size: string) => void
+  addItem: (product: Product, size: string, quantity?: number) => void
   removeItem: (productId: string, size: string) => void
   updateQuantity: (productId: string, size: string, quantity: number) => void
   clearCart: () => void
