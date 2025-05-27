@@ -131,3 +131,41 @@ export const useAuth = create<AuthState>()(
     }
   )
 );
+export async function uploadImageToStorage(
+  formData: FormData,
+  maxFileSize: number = 4 * 1024 * 1024 // 4MB
+): Promise<string | null> {
+  try {
+    const imageFile = formData.get('image') as File | null;
+
+    if (!imageFile || imageFile.size === 0) {
+      throw new Error('No image file provided or file is empty');
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(imageFile.type)) {
+      throw new Error(`Invalid file type (${imageFile.type}). Allowed types: ${validTypes.join(', ')}`);
+    }
+
+    if (imageFile.size > maxFileSize) {
+      throw new Error(`File too large (${(imageFile.size / 1024 / 1024).toFixed(2)}MB). Max size: ${(maxFileSize / 1024 / 1024)}MB`);
+    }
+
+    const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!uploadResponse.ok) {
+      const errorData = await uploadResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || `Upload failed with status ${uploadResponse.status}`);
+    }
+
+    const { url } = await uploadResponse.json();
+    return url;
+
+  } catch (error) {
+    console.error('Image upload error:', error instanceof Error ? error.message : error);
+    return null;
+  }
+}
